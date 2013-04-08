@@ -33,6 +33,8 @@ import org.moeaframework.util.TypedProperties;
 import org.moeaframework.analysis.sensitivity.*;
 
 import org.moeaframework.core.Solution;
+import java.io.FileWriter;
+import org.moeaframework.core.variable.RealVariable;
 
 /**
  * Command line utility for merging the approximation sets stored in one or more
@@ -160,7 +162,22 @@ public class PSOResultFileMerger extends CommandLineUtility {
 					}
 				}
 			} else {
-				PopulationIO.writeObjectives(output, mergedSet);
+				//PopulationIO.writeObjectives(output, mergedSet);
+				FileWriter outputstream = new FileWriter(output);
+				for(Solution solution : mergedSet){
+					int jj;
+					for(jj=0; jj<solution.getNumberOfVariables(); jj++){
+						outputstream.write(((RealVariable)solution.getVariable(jj)).getValue()+" ");
+						System.out.print(((RealVariable)solution.getVariable(jj)).getValue()+" ");
+					}
+					for(jj=0; jj<solution.getNumberOfObjectives()-1; jj++){
+						outputstream.write(solution.getObjective(jj)+" ");
+						System.out.print(solution.getObjective(jj)+" ");
+					}
+					outputstream.write(solution.getObjective(jj)+"\n");
+					System.out.print(solution.getObjective(jj)+"\n");
+					outputstream.flush();
+				}
 			}
 
 		} finally {
