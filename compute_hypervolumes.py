@@ -12,6 +12,7 @@ import re
 import glob
 import os
 import argparse
+from emptysets import find_empty_sets
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -51,7 +52,8 @@ def get_args():
                         help="directory where temporary "\
                              "working files will be placed"\
                              "Defaults to /gpfs/scratch/"\
-                             "mjw5407/task1/hv/temp"
+                             "mjw5407/task1/hv/temp/{ALGO}"\
+                             "_{NDV}_{NOBJ}_{EPS}/"
                        )
 
     return parser.parse_args()
@@ -68,8 +70,10 @@ def setsdirectory(algo, ndv, nobj, eps):
     return "/gpfs/scratch/mjw5407/task1/sets/"\
            "{0}_{1}_{2}_{3}".format(algo, ndv, nobj, eps)
 
-def workingdirectory():
-    return "/gpfs/scratch/mjw5407/task1/hv/temp"
+def workingdirectory(algo, ndv, nobj, eps):
+    return "/gpfs/scratch/mjw5407/task1/hv/temp/"\
+           "{0}_{1}_{2}_{3}".format(algo, ndv, nobj, eps)
+
 
 def awkscript(ndv, nobj, otpt):
     percents = ["%s"]*nobj
@@ -116,30 +120,63 @@ def commandline(nobj, ref, tempin, tempout):
             ])
     return cml
 
-def write_seed(outfp, infp, seed):
+def write_seed(outfp, infp, seed, empty_sets):
+    header = infp.readline()
     line = infp.readline()
+    counter = 0
     while line:
-        outfp.write("{0} {1}".format(seed, line))
+        if counter in empty_sets:
+            counter += 1
+            outfp.write("{0} {1} {2}".format(
+                        seed, counter, " ".join(["0.0"]*6)))
+
+        outfp.write("{0} {1} {2}".format(
+                   seed, counter, line))
+        counter += 1
         line = infp.readline()
+        
 
 def evaluate_sets(ref, sets, outfp, workdir, ndv, nobj):
+    outfp.write("Seed Set "\
+                "Hypervolume GenerationalDistance "\
+                "InvertedGenerationalDistance Spacing "\
+                "EpsilonIndicator MaximumParetoFrontError\n"
+               )
+    temp_inputs = []
+    temp_outputs = []
+
     for aset in sets:
         tempin = temp_input_filename(workdir, aset)
         tempout = temp_output_filename(workdir, aset)
-        if os.path.exists(tempout):
-            print "already done, skipping {0}".format(aset)
-            continue
-        strip_dvs(ndv, nobj, aset, tempin)
+        temp_inputs.append(tempin)
+        temp_outputs.append(tempout)
+        if os.path.exists(tempin):
+            print "{0} already exists, skipping awk".format(
+                   tempin)
+        else:
+            strip_dvs(ndv, nobj, aset, tempin)
+
         cml = commandline(nobj, ref, tempin, tempout)
         print " ".join(cml)
         child = Popen(cml)
+        with open(tempin, 'r') as ifp:
+            empty_sets = find_empty_sets(ifp)
         child.wait()
         seed = aset.split("_")[-1]
         seed = seed.split(".")[0]
         with open(tempout, "r") as infp:
-            write_seed(outfp, infp, seed)
-        #os.unlink(tempin)
-        #os.unlink(tempout)
+            write_seed(outfp, infp, seed, empty_sets)
+
+    for tempin in temp_inputs:
+        try:
+            os.unlink(tempin)
+        except OSError:
+            pass
+    for tempout in temp_outputs:
+        try:
+            os.unlink(tempout)
+        except OSError:
+            pass
 
 def cli():
     args = get_args()
@@ -157,7 +194,11 @@ def cli():
     if args.workingdirectory:
         workdir = args.workingdirectory
     else:
-        workdir = workingdirectory()
+        workdir = workingdirectory(args.algo, args.ndv,
+                                   args.nobj, args.eps)
+
+    if not os.path.exists(workdir):
+        os.makedirs(workdir)
 
     if args.outputfile:
         outfp = args.outputfile
