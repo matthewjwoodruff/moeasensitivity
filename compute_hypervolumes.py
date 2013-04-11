@@ -125,10 +125,10 @@ def write_seed(outfp, infp, seed, empty_sets):
     line = infp.readline()
     counter = 0
     while line:
-        if counter in empty_sets:
-            counter += 1
-            outfp.write("{0} {1} {2}".format(
+        while counter in empty_sets:
+            outfp.write("{0} {1} {2}\n".format(
                         seed, counter, " ".join(["0.0"]*6)))
+            counter += 1
 
         outfp.write("{0} {1} {2}".format(
                    seed, counter, line))
@@ -160,7 +160,7 @@ def evaluate_sets(ref, sets, outfp, workdir, ndv, nobj):
         print " ".join(cml)
         child = Popen(cml)
         with open(tempin, 'r') as ifp:
-            empty_sets = find_empty_sets(ifp)
+            empty_sets, _ = find_empty_sets(ifp)
         child.wait()
         seed = aset.split("_")[-1]
         seed = seed.split(".")[0]
