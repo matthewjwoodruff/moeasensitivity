@@ -124,10 +124,11 @@ def write_seed(outfp, infp, seed, empty_sets):
     header = infp.readline()
     line = infp.readline()
     counter = 0
+    emptymetrics = "0.0 Inf Inf 0.0 Inf Inf"
     while line:
         while counter in empty_sets:
             outfp.write("{0} {1} {2}\n".format(
-                        seed, counter, " ".join(["0.0"]*6)))
+                        seed, counter, emptymetrics)
             counter += 1
 
         outfp.write("{0} {1} {2}".format(
@@ -208,7 +209,7 @@ def cli():
 
     evaluate_sets(ref, sets, outfp, workdir,
                     args.ndv, args.nobj)
-    ref.close()
+    close()
     outfp.close()
 
 if __name__ == "__main__":
