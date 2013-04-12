@@ -128,7 +128,7 @@ def write_seed(outfp, infp, seed, empty_sets):
     while line:
         while counter in empty_sets:
             outfp.write("{0} {1} {2}\n".format(
-                        seed, counter, emptymetrics)
+                        seed, counter, emptymetrics))
             counter += 1
 
         outfp.write("{0} {1} {2}".format(
@@ -206,11 +206,11 @@ def cli():
     else:
         outfp = open(outputfile(args.algo, args.ndv, 
                                 args.nobj, args.eps), "w")
-
-    evaluate_sets(ref, sets, outfp, workdir,
-                    args.ndv, args.nobj)
-    close()
-    outfp.close()
+    try:
+        evaluate_sets(ref, sets, outfp, workdir,
+                        args.ndv, args.nobj)
+    finally:
+        outfp.close()
 
 if __name__ == "__main__":
     cli()
