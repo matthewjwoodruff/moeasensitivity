@@ -11,6 +11,16 @@ Going out: stats: mean, quantile, variance
 """
 import argparse
 import pandas
+import re
+
+def is_stat(stat):
+    if stat in ["mean", "variance", "min", "max", "q100"]:
+        return stat
+    elif re.match("q[0-9][0-9]?$", stat):
+        return stat
+    else:
+        raise argparse.ArgumentTypeError(
+                "Invalid statistic {0}".format(stat))
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -34,9 +44,9 @@ def get_args():
                              "parameterizations file has "\
                              "columns."
                        )
+    stats = ["mean", "variance", "q10", "q50", "q90"]
     parser.add_argument("-s", "--stats", nargs="+",
-                        default=["mean", "variance",
-                                 "q10", "q50", "q90"],
+                        default = stats, type = is_stat,
                         help="statistics to compute")
     parser.add_argument("-g", "--group", nargs="+",
                         action="append",
