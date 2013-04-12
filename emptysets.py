@@ -10,6 +10,7 @@ def find_empty_sets(stream):
     informational = re.compile("^# +[A-Za-z0-9]")
     separator = re.compile("^# */?")
     data = re.compile("^[0-9]")
+    blank = re.compile("^ *$")
 
     started = False
     line = True
@@ -27,7 +28,7 @@ def find_empty_sets(stream):
             separator_last = False
         elif informational.search(line):
             pass
-        elif len(line) == 0:
+        elif blank.search(line):
             pass
         else:
             msg = "Unknown line format '{0}'".format(line)
