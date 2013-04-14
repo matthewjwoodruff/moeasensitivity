@@ -13,6 +13,10 @@ import glob
 import os
 import argparse
 from emptysets import find_empty_sets
+from reduce_refset import awkscript
+
+class PathError(Exception):
+    pass
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -33,7 +37,7 @@ def get_args():
                              "scratch/mjw5407/task1/ref/"\
                              "m.{NOBJ}_{EPS}.ref"
                        )
-    parser.add_argument("-s", "--setsdirectory",
+    parser.add_argument("-d", "--setsdirectory",
                         help="directory where solution "\
                              "sets are stored.  Defaults "\
                              "to /gpfs/scratch/mjw5407/"\
@@ -55,12 +59,25 @@ def get_args():
                              "mjw5407/task1/hv/temp/{ALGO}"\
                              "_{NDV}_{NOBJ}_{EPS}/"
                        )
+    parser.add_argument("-s", "--seed", type=int,
+                        help="run a single seed and leave "\
+                             "the result sitting in the "\
+                             "working directory.  User "\
+                             "must patch up the aggregate "\
+                             "file manually.")
 
     return parser.parse_args()
 
-def outputfile(algo, ndv, nobj, eps):
-    return "/gpfs/scratch/mjw5407/task1/hv/"\
-           "{0}_{1}_{2}_{3}.hv".format(algo, ndv, nobj, eps)
+def outputfile(algo, ndv, nobj, eps, seed=None):
+    fn = [algo, str(ndv), str(nobj), str(eps)]
+    if seed:
+        fn.append(str(seed))
+        dirname = workingdirectory(algo, ndv, nobj, eps)
+    else:
+        dirname = "/gpfs/scratch/mjw5407/task1/hv/"
+
+    fn = "_".join(fn) + ".hv"
+    return os.path.join(dirname, fn)
 
 def referencefilename(nobj, eps):
     return "/gpfs/scratch/mjw5407/task1/ref/"\
@@ -74,21 +91,14 @@ def workingdirectory(algo, ndv, nobj, eps):
     return "/gpfs/scratch/mjw5407/task1/hv/temp/"\
            "{0}_{1}_{2}_{3}".format(algo, ndv, nobj, eps)
 
-
-def awkscript(ndv, nobj, otpt):
-    percents = ["%s"]*nobj
-    dollars = ["${0}".format(ndv+ii+1) for ii in range(nobj)]
-    script = ";".join(['BEGIN {{FS=" "}}',
-             '/^#/ {{print $0 > "{0}"}}',
-             '/^[0-9]/ {{printf "{1}\\n",{2}  > "{0}"}}'])
-    return script.format(otpt, " ".join(percents), 
-                               ",".join(dollars))
-
 def strip_dvs(ndv, nobj, setsfile, tempfile):
     awktext = awkscript(ndv, nobj, tempfile)
     cml = ["awk", awktext, setsfile]
     print " ".join(cml)
     child = Popen(cml)
+    child.wait()
+    sedtext = ["sed", "-i", "-e", "/^ *$/d", tempfile]
+    child = Popen(sedtext)
     child.wait()
 
 def classpath():
@@ -168,16 +178,19 @@ def evaluate_sets(ref, sets, outfp, workdir, ndv, nobj):
         with open(tempout, "r") as infp:
             write_seed(outfp, infp, seed, empty_sets)
 
-    for tempin in temp_inputs:
-        try:
-            os.unlink(tempin)
-        except OSError:
-            pass
-    for tempout in temp_outputs:
-        try:
-            os.unlink(tempout)
-        except OSError:
-            pass
+    return temp_inputs, temp_outputs
+
+    def cleanup(temp_inputs, temp_outputs): 
+        for tempin in temp_inputs:
+            try:
+                os.unlink(tempin)
+            except OSError:
+                pass
+        for tempout in temp_outputs:
+            try:
+                os.unlink(tempout)
+            except OSError:
+                pass
 
 def cli():
     args = get_args()
@@ -191,7 +204,11 @@ def cli():
         setsdir = setsdirectory(args.algo, args.ndv, 
                                 args.nobj, args.eps)
     sets = glob.glob(os.path.join(setsdir, "*sets"))
+    if args.seed is not None:
+        sets = [aset for aset in sets if re.search(
+                "_{0}.sets".format(args.seed), aset)]
 
+    print "sets {0}".format("\n".join(sets))
     if args.workingdirectory:
         workdir = args.workingdirectory
     else:
@@ -203,12 +220,27 @@ def cli():
 
     if args.outputfile:
         outfp = args.outputfile
+    elif args.seed is None:
+        fn = outputfile(args.algo, args.ndv, 
+                        args.nobj, args.eps)
+        if os.path.exists(fn):
+            msg = "{0} exists, specify explicitly to "\
+                  "clobber".format(fn)
+            raise PathError(msg)
+        outfp = open(fn, "w")
     else:
-        outfp = open(outputfile(args.algo, args.ndv, 
-                                args.nobj, args.eps), "w")
+        fn = outputfile(args.algo, args.ndv, 
+                        args.nobj, args.eps, args.seed)
+        if os.path.exists(fn):
+            msg = "{0} exists, specify explicitly to "\
+                  "clobber".format(fn)
+            raise PathError(msg)
+        outfp = open(fn, "w")
     try:
-        evaluate_sets(ref, sets, outfp, workdir,
-                        args.ndv, args.nobj)
+        tin, tout = evaluate_sets(ref, sets, outfp, workdir,
+                                  args.ndv, args.nobj)
+        if args.seed is None:# one-seed run leaves working files
+            cleanup(tin, tout)
     finally:
         outfp.close()
 

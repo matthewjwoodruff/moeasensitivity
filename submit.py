@@ -12,34 +12,12 @@ import argparse
 import time
 from collections import namedtuple
 
-
-"""
-        script = [
-            "#PBS -N {0}".format(self.name),
-            "#PBS -l nodes=1:ppn=1",
-            "#PBS -l walltime=24:00:00",
-            "#PBS -o {0}".format(os.path.join("output",self.name)),
-            "#PBS -e {0}".format(os.path.join("error",self.name)),
-            "cd $PBS_O_WORKDIR",
-            "java {0} {1} {2}".format(
-                java_args, merger, " ".join(merger_args))
-            ]
-                       
-        return script
-
-    def submit(self):
-        script = self.pbs_script()
-        child = Popen("qsub", stdin=PIPE, stdout=PIPE)
-        child.stdin.write("\n".join(script))
-        child.stdin.close()
-        jobid = child.stdout.read()
-        sys.stdout.flush()
-        return jobid.strip()
-"""
-
-def commandline(algo, ndv, nobj, eps):
-    return ["python", "compute_hypervolumes.py", 
+def commandline(algo, ndv, nobj, eps, seed=None):
+    cml = ["python", "compute_hypervolumes.py", 
             algo, ndv, nobj, eps]
+    if seed is not None:
+        cml.extend(["-s", str(seed)])
+    return cml
 
 def script(commandline, name):
     script = [
@@ -53,10 +31,14 @@ def script(commandline, name):
              ]
     return script
 
-def submit(algo, problem):
+def submit(algo, problem, seed=None):
     ndv, nobj, eps = problem.split("_")
-    cml = commandline(algo, ndv, nobj, eps)
-    name = "_".join(["hv", problem, algo])
+    cml = commandline(algo, ndv, nobj, eps, seed)
+    name = ["h"]
+    if seed is not None:
+        name.append(str(seed))
+    name.extend([ problem, algo])
+    name = "_".join(name)
     child = Popen("qsub", stdin=PIPE, stdout=PIPE)
     child.stdin.write("\n".join(script(cml, name)))
     child.stdin.close()
@@ -73,6 +55,15 @@ def get_args():
                         help="comma-separated list of problems",
                         default= "27_10_1.0,27_3_1.0,27_3_0.1,"\
                                  "18_10_1.0,18_3_1.0,18_3_0.1")
+    parser.add_argument("-s", "--start-seed", type = int,
+                        help="Specify only if you want single-seed"\
+                             "runs. These don't accumulate results."
+                       )
+    parser.add_argument("-e", "--end-seed", type=int,
+                        help="Specify only if you want single-seed"\
+                             "runs. These don't accumulate results."
+                       )
+
     return parser.parse_args()
 
 def cli():
@@ -88,8 +79,19 @@ def cli():
         for problem in args.problems.split(","):
             if not problem in valid_problems:
                 print "{0}: unknown problem".format(problem)
-            print submit(algo, problem), algo, problem
-            time.sleep(0.5)
+            if args.start_seed is not None and args.end_seed is not None:
+                for seed in range(args.start_seed, args.end_seed + 1):
+                    print submit(algo, problem, seed)
+                    time.sleep(0.5)
+            elif args.start_seed is not None:
+                print submit(algo, problem, args.start_seed)
+                time.sleep(0.5)
+            elif args.end_seed is not None:
+                print submit(algo, problem, args.end_seed)
+                time.sleep(0.5)
+            else:
+                print submit(algo, problem), algo, problem
+                time.sleep(0.5)
 
 if __name__ == "__main__":
     cli()
