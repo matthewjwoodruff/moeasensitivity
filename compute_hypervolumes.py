@@ -70,7 +70,7 @@ def get_args():
 
 def outputfile(algo, ndv, nobj, eps, seed=None):
     fn = [algo, str(ndv), str(nobj), str(eps)]
-    if seed:
+    if seed is not None:
         fn.append(str(seed))
         dirname = workingdirectory(algo, ndv, nobj, eps)
     else:
