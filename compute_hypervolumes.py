@@ -1,11 +1,23 @@
 """
-Hypervolume.
-I have 6 problem instances, times 6 algorithms, times 50
-seeds per algorithm.  That's 1800 sets files.  I do not
-want 1800 10000 row hypervolume files.  I want 36 
-500000 row hypervolume files.
-So do all seeds by default.
-Seed is always the last thing before .sets.
+Copyright (C) 2013 Joseph Kasprzyk, Matthew Woodruff and others.
+
+This script is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This script is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this script. If not, see <http://www.gnu.org/licenses/>.
+
+compute_hypervolumes.py
+Use MOEAFramework and the wfg2 hypervolume computation to
+compute hypervolume attainment for every run of an MOEA
+parameter sensitivity study.
 """
 from subprocess import Popen, PIPE
 import re
