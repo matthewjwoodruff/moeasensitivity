@@ -14,10 +14,18 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this script. If not, see <http://www.gnu.org/licenses/>.
 
+===========================================================
+
 compute_hypervolumes.py
+
 Use MOEAFramework and the wfg2 hypervolume computation to
 compute hypervolume attainment for every run of an MOEA
 parameter sensitivity study.
+
+Paths default to the ones most convenient for the author's
+purposes.  You should change them, or at least override
+them on the command line.
+
 """
 from subprocess import Popen, PIPE
 import re
@@ -192,17 +200,17 @@ def evaluate_sets(ref, sets, outfp, workdir, ndv, nobj):
 
     return temp_inputs, temp_outputs
 
-    def cleanup(temp_inputs, temp_outputs): 
-        for tempin in temp_inputs:
-            try:
-                os.unlink(tempin)
-            except OSError:
-                pass
-        for tempout in temp_outputs:
-            try:
-                os.unlink(tempout)
-            except OSError:
-                pass
+def cleanup(temp_inputs, temp_outputs): 
+    for tempin in temp_inputs:
+        try:
+            os.unlink(tempin)
+        except OSError:
+            pass
+    for tempout in temp_outputs:
+        try:
+            os.unlink(tempout)
+        except OSError:
+            pass
 
 def cli():
     args = get_args()
