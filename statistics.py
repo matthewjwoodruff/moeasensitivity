@@ -12,11 +12,15 @@ Going out: stats: mean, quantile, variance
 import argparse
 import pandas
 import re
+import os
+
+def is_quantile(stat):
+    return re.match("q[0-9][0-9]?$", stat)
 
 def is_stat(stat):
     if stat in ["mean", "variance", "min", "max", "q100"]:
         return stat
-    elif re.match("q[0-9][0-9]?$", stat):
+    elif is_quantile(stat):
         return stat
     else:
         raise argparse.ArgumentTypeError(
@@ -56,11 +60,68 @@ def get_args():
                              "file.  Option may be speci"\
                              "fied more than once."
                        )
+    parser.add_argument("-o", "--output-directory",
+                        default="/gpfs/scratch/mjw5407/"
+                                "task1/stats/"
+                       )
     return parser.parse_args()
-                        
+
+def compute(data, stat):
+    if stat == "mean":
+        return data.mean()
+    if stat == "variance":
+        return data.var()
+    if is_quantile(stat):
+        quantile = float(stat[1:]) / 100.0
+        if quantile == 0.0:
+            return data.min()
+        return data.quantile(quantile)
+    if stat == "max" or stat == "q100":
+        return data.max()
+    if stat == "min":
+        return data.min()
+
+def analyze(data, stats, groups):
+    results = []
+    if groups is None:
+        groups = [["Set"]]
+    for group in groups:
+        print "analyzing grouped by {0}".format(group)
+        gb = data.groupby(group)
+        for stat in stats:
+            print "computing {0}".format(stat)
+            tag = "{0}_{1}".format("_".join(group), stat)
+            results.append((tag, compute(gb, stat)))
+        
+    return results
+
+def write_result(infn, result, outputdir):
+    fn = "_".join([result[0], os.path.basename(infn)])
+    fn = re.sub("\.hv$", "", fn)
+    fn = os.path.join(outputdir, fn)
+    print "writing {0}".format(fn)
+    result[1].to_csv(fn, sep=" ", index=True)    
+
 def cli():
     args = get_args()
-    print args
+    data = pandas.read_table(args.data, sep=" ")
+    parameters = pandas.read_table(
+                               args.parameters, sep=" ",
+                               names=["name","low","high"],
+                               header=None)
+    param_names = parameters["name"].values
+    parameterizations = pandas.read_table(
+                               args.parameterizations,
+                               sep=" ",
+                               names = param_names,
+                               header = None)
+    data = data.join(parameterizations, on=["Set"], 
+                     how="outer")
+
+    results = analyze(data, args.stats, args.group)
+    for result in results:
+        write_result(args.data.name, result, 
+                     args.output_directory)
 
 if __name__ == "__main__":
     cli()
