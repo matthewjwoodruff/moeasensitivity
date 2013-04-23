@@ -1,16 +1,30 @@
 """
-check status of running jobs and output files, decide what jobs
-to start
+Copyright (C) 2013 Joseph Kasprzyk, Matthew Woodruff and others.
+
+This script is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This script is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this script. If not, see <http://www.gnu.org/licenses/>.
+
+===================================================================
+
+submit.py
+Submit a batch of compute_hypervolumes runs to a PBS batch server.
 """
 
 from subprocess import Popen, PIPE
-import xml.etree.ElementTree as ET
 import os
 import re
-import sys
 import argparse
 import time
-from collections import namedtuple
 
 def commandline(algo, ndv, nobj, eps, seed=None):
     cml = ["python", "compute_hypervolumes.py", 
