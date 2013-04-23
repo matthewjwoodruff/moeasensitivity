@@ -1,3 +1,30 @@
+"""
+Copyright (C) 2013 Joseph Kasprzyk, Matthew Woodruff and others.
+
+This script is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This script is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this script. If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================
+reduce_refset.py
+
+Mainly, produce an awk script that will strip decision 
+variables from a file containing solution sets, while 
+preserving the lines that delimit the solution sets.
+
+If invoked at the command line, print out the awk script.
+
+"""
+
 import argparse
 
 def awkscript(ndv, nobj, otpt):
