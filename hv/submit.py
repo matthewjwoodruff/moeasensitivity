@@ -28,7 +28,7 @@ import time
 
 def commandline(algo, ndv, nobj, eps, ref, seed):
     cml = ["python", "compute_hypervolumes.py", 
-            algo, ndv, nobj, eps]
+            algo, ndv, nobj, eps, "-r", ref]
     cml.extend(["-s", str(seed)])
     return cml
 
@@ -47,7 +47,7 @@ def script(commandline, name):
 def submit(algo, problem, refdir, seed=None):
     ndv, nobj, eps = problem.split("_")
     ref = os.path.join(refdir, 
-                       "m.{0}_{1}_expanded.ref".format(nobj, eps))
+                       "m.{0}_{1}_extended.ref".format(nobj, eps))
     cml = commandline(algo, ndv, nobj, eps, ref, seed)
     name = ["h"]
     if seed is not None:
@@ -81,7 +81,7 @@ def get_args():
                        )
     parser.add_argument("-r", "--reference-dir", 
                         help="directory with reference files",
-                        default="/gpfs/home/mjw5407/task1/"\
+                        default="/gpfs/scratch/mjw5407/task1/"\
                                 "ref/extended")
 
     return parser.parse_args()
