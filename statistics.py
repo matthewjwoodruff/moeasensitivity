@@ -89,20 +89,23 @@ def compute(data, stat):
     if stat == "min":
         return data.min()
 
-def analyze(data, stats, group, deltas):
+def analyze(data, stats, group=None, deltas=None):
     results = []
     if group is None:
         group = ["Set"]
     togroupby = copy.copy(group)
     ii = 0
-    while ii < len(group) and ii < len(deltas):
-        colname = "grid_{0}".format(group[ii])
-        gridnumbers = numpy.floor(data[group[ii]].apply(
-                        lambda val: val / deltas[ii]))
-        data[colname] = gridnumbers.apply(
-                        lambda val: val * deltas[ii])
-        togroupby[ii] = colname
-        ii += 1
+    if deltas is None:
+        togroupby = group
+    else:
+        while ii < len(group) and ii < len(deltas):
+            colname = "grid_{0}".format(group[ii])
+            gridnumbers = numpy.floor(data[group[ii]].apply(
+                            lambda val: val / deltas[ii]))
+            data[colname] = gridnumbers.apply(
+                            lambda val: val * deltas[ii])
+            togroupby[ii] = colname
+            ii += 1
         
     print "analyzing grouped by {0}".format(group)
     gb = data.groupby(togroupby)
