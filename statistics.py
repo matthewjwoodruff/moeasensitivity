@@ -11,8 +11,10 @@ Going out: stats: mean, quantile, variance
 """
 import argparse
 import pandas
+import numpy
 import re
 import os
+import copy
 
 def is_quantile(stat):
     return re.match("q[0-9][0-9]?$", stat)
@@ -53,12 +55,18 @@ def get_args():
                         default = stats, type = is_stat,
                         help="statistics to compute")
     parser.add_argument("-g", "--group", nargs="+",
-                        action="append",
                         help="parameters by which to "\
                              "group.  Names should be "\
                              "found in the parameters "\
-                             "file.  Option may be speci"\
-                             "fied more than once."
+                             "file.  "
+                       )
+    parser.add_argument("-d", "--deltas",
+                        help="If group is specified, "\
+                             "deltas may be used to impose "\
+                             "grid boxes on the summary "\
+                             "rather than using point "\
+                             "values.",
+                         nargs="+", type = float
                        )
     parser.add_argument("-o", "--output-directory",
                         default="/gpfs/scratch/mjw5407/"
@@ -81,17 +89,27 @@ def compute(data, stat):
     if stat == "min":
         return data.min()
 
-def analyze(data, stats, groups):
+def analyze(data, stats, group, deltas):
     results = []
-    if groups is None:
-        groups = [["Set"]]
-    for group in groups:
-        print "analyzing grouped by {0}".format(group)
-        gb = data.groupby(group)
-        for stat in stats:
-            print "computing {0}".format(stat)
-            tag = "{0}_{1}".format("_".join(group), stat)
-            results.append((tag, compute(gb, stat)))
+    if group is None:
+        group = ["Set"]
+    togroupby = copy.copy(group)
+    ii = 0
+    while ii < len(group) and ii < len(deltas):
+        colname = "grid_{0}".format(group[ii])
+        gridnumbers = numpy.floor(data[group[ii]].apply(
+                        lambda val: val / deltas[ii]))
+        data[colname] = gridnumbers.apply(
+                        lambda val: val * deltas[ii])
+        togroupby[ii] = colname
+        ii += 1
+        
+    print "analyzing grouped by {0}".format(group)
+    gb = data.groupby(togroupby)
+    for stat in stats:
+        print "computing {0}".format(stat)
+        tag = "{0}_{1}".format("_".join(group), stat)
+        results.append((tag, compute(gb, stat)))
         
     return results
 
@@ -118,7 +136,12 @@ def cli():
     data = data.join(parameterizations, on=["Set"], 
                      how="outer")
 
-    results = analyze(data, args.stats, args.group)
+    if args.deltas is not None:
+        deltas = args.deltas
+    else:
+        deltas = []
+
+    results = analyze(data, args.stats, args.group, deltas)
     for result in results:
         write_result(args.data.name, result, 
                      args.output_directory)
