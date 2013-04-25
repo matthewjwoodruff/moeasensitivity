@@ -63,7 +63,6 @@ def scan(stream, first, last):
         counter += 1
     return best, worst
 
-
 def cli():
     args = get_args()
     best, worst = scan(args.filename, args.first, args.last)
