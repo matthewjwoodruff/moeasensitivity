@@ -24,6 +24,7 @@ hypervolume calculation to use a reasonable nadir point.
 """
 import argparse
 import os
+import copy
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -79,7 +80,7 @@ def axial_points(objectives, undata):
                           in zip(na, nadir)]
     axial = []
     for ii in range(len(utopia)):
-        point = utopia
+        point = copy.copy(utopia)
         point[ii] = nadir[ii]
         axial.append(point)
     return axial
