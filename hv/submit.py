@@ -26,18 +26,17 @@ import re
 import argparse
 import time
 
-def commandline(algo, ndv, nobj, eps, seed=None):
+def commandline(algo, ndv, nobj, eps, ref, seed):
     cml = ["python", "compute_hypervolumes.py", 
             algo, ndv, nobj, eps]
-    if seed is not None:
-        cml.extend(["-s", str(seed)])
+    cml.extend(["-s", str(seed)])
     return cml
 
 def script(commandline, name):
     script = [
                 "#PBS -N {0}".format(name),
                 "#PBS -l nodes=1:ppn=1",
-                "#PBS -l walltime=24:00:00",
+                "#PBS -l walltime=6:00:00",
                 "#PBS -o {0}".format(os.path.join("output",name)),
                 "#PBS -e {0}".format(os.path.join("error",name)),
                 "cd $PBS_O_WORKDIR",
@@ -45,9 +44,11 @@ def script(commandline, name):
              ]
     return script
 
-def submit(algo, problem, seed=None):
+def submit(algo, problem, refdir, seed=None):
     ndv, nobj, eps = problem.split("_")
-    cml = commandline(algo, ndv, nobj, eps, seed)
+    ref = os.path.join(refdir, 
+                       "m.{0}_{1}_expanded.ref".format(nobj, eps))
+    cml = commandline(algo, ndv, nobj, eps, ref, seed)
     name = ["h"]
     if seed is not None:
         name.append(str(seed))
@@ -70,22 +71,29 @@ def get_args():
                         default= "27_10_1.0,27_3_1.0,27_3_0.1,"\
                                  "18_10_1.0,18_3_1.0,18_3_0.1")
     parser.add_argument("-s", "--start-seed", type = int,
-                        help="Specify only if you want single-seed"\
-                             "runs. These don't accumulate results."
+                        help="Specify only if you want single-seed "\
+                             "runs. These don't accumulate results.",
+                        required = True
                        )
     parser.add_argument("-e", "--end-seed", type=int,
-                        help="Specify only if you want single-seed"\
+                        help="Specify only if you want single-seed "\
                              "runs. These don't accumulate results."
                        )
+    parser.add_argument("-r", "--reference-dir", 
+                        help="directory with reference files",
+                        default="/gpfs/home/mjw5407/task1/"\
+                                "ref/extended")
 
     return parser.parse_args()
 
 def cli():
     args = get_args()
+        
     valid_algos = ["BorgRecency", "Borg", "GDE3", 
                    "NSGAII", "eNSGAII", "eMOEA"]
     valid_problems = ["27_10_1.0", "27_3_1.0", "27_3_0.1", 
                       "18_10_1.0", "18_3_1.0", "18_3_0.1"]
+    refdir = args.reference_dir
     for algo in args.algos.split(","):
         if not algo in valid_algos:
             print "{0}: unknown MOEA".format(algo)
@@ -95,16 +103,10 @@ def cli():
                 print "{0}: unknown problem".format(problem)
             if args.start_seed is not None and args.end_seed is not None:
                 for seed in range(args.start_seed, args.end_seed + 1):
-                    print submit(algo, problem, seed)
+                    print submit(algo, problem, refdir, seed)
                     time.sleep(0.5)
-            elif args.start_seed is not None:
-                print submit(algo, problem, args.start_seed)
-                time.sleep(0.5)
-            elif args.end_seed is not None:
-                print submit(algo, problem, args.end_seed)
-                time.sleep(0.5)
             else:
-                print submit(algo, problem), algo, problem
+                print submit(algo, problem, refdir, args.start_seed)
                 time.sleep(0.5)
 
 if __name__ == "__main__":
