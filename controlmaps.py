@@ -87,14 +87,18 @@ def controlmaps(fig, algos, problems, paramsdir, **kwargs):
     worst = kwargs.get("worst", worst)
     nrows = len(algos)
     ncols = len(problems)
-    jet_r = matplotlib.cm.get_cmap("jet_r")
+    if not kwargs.get("invert", False):
+       cmap = matplotlib.cm.get_cmap("jet_r")
+    else:
+        cmap = matplotlib.cm.get_cmap("jet")
+
     norm = matplotlib.colors.Normalize(vmax=best, vmin=worst)
 
     for ii in range(nrows):
         rangex, rangey = ranges[ii]
         for jj in range(ncols):
             ax = fig.add_subplot(nrows, ncols, ncols * ii + jj + 1)
-            ax.contourf(meshes[ii][jj], 100, cmap=jet_r, norm=norm)
+            ax.contourf(meshes[ii][jj], 100, cmap=cmap, norm=norm)
             tickify(rangex, rangey, ax, nticks)
             
 
