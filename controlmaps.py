@@ -16,20 +16,20 @@ def tickify(rangex, rangey, ax, nticks=5):
     xmin = round(xmin, 0)
     xmax = round(xmax, 0)
     xstep = (xmax - xmin) / (nticks )
-    ax.set_xticks(numpy.arange(xmin, xmax + xstep, xstep))
+    ax.set_xticks(numpy.arange(xmin+xstep, xmax , xstep))
     ymin, ymax = ax.get_ylim()
     ymin = round(ymin, 0)
     ymax = round(ymax, 0)
     ystep = (ymax - ymin) / (nticks )
-    ax.set_yticks(numpy.arange(ymin, ymax + ystep, ystep))
+    ax.set_yticks(numpy.arange(ymin, ymax +ystep, ystep))
 
     xvalmin, xvalmax, xvalstep = rangex
     roundingfactor = xvalmax / 10
-    xticklabels = ["{0:.0f}".format(max(xvalmin,
-                      roundingfactor * round(val/roundingfactor, 0))
+    xticklabels = ["{0:.0f}".format(
+                      roundingfactor * round(val/roundingfactor, 0)
                       )
                    for val in 
-                   numpy.arange(xvalmin, xvalmax+xvalstep, xvalstep)]
+                   numpy.arange(xvalmin+xvalstep, xvalmax, xvalstep)]
     ax.set_xticklabels(xticklabels)
 
     yvalmin, yvalmax, yvalstep = rangey
@@ -50,7 +50,7 @@ def controlmaps(fig, algos, problems, paramsdir, **kwargs):
     worst = 1.0
     meshes = []
     ranges = []
-    nticks = 3
+    nticks = 5
     for algo in algos:
         params = pandas.read_table(os.path.join(paramsdir, 
                                    "{0}_Params".format(algo)), 
@@ -101,6 +101,10 @@ def controlmaps(fig, algos, problems, paramsdir, **kwargs):
                                  nalgos * jj + ii + 1)
             ax.contourf(meshes[ii][jj], 100, cmap=cmap, norm=norm)
             tickify(rangex, rangey, ax, nticks)
+            ax.set_xlabel("population size")
+            if ii == 0:
+                ax.set_ylabel("maximum evaluations")
+            ax.set_title(algos[ii])
             ax.label_outer() 
 
 def get_args():
