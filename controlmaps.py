@@ -15,12 +15,12 @@ def tickify(rangex, rangey, ax, nticks=5):
     xmin, xmax = ax.get_xlim()
     xmin = round(xmin, 0)
     xmax = round(xmax, 0)
-    xstep = (xmax - xmin) / (nticks - 1)
+    xstep = (xmax - xmin) / (nticks )
     ax.set_xticks(numpy.arange(xmin, xmax + xstep, xstep))
     ymin, ymax = ax.get_ylim()
     ymin = round(ymin, 0)
     ymax = round(ymax, 0)
-    ystep = (ymax - ymin) / (nticks - 1)
+    ystep = (ymax - ymin) / (nticks )
     ax.set_yticks(numpy.arange(ymin, ymax + ystep, ystep))
 
     xvalmin, xvalmax, xvalstep = rangex
@@ -64,10 +64,10 @@ def controlmaps(fig, algos, problems, paramsdir, **kwargs):
             cols = "populationSize"
         xvalmin = params.ix[cols].min()
         xvalmax = params.ix[cols].max()
-        xvalstep = (xvalmax - xvalmin) / (nticks - 1)
+        xvalstep = (xvalmax - xvalmin) / (nticks )
         yvalmin = params.ix[rows].min()
         yvalmax = params.ix[rows].max()
-        yvalstep = (yvalmax - yvalmin) / (nticks - 1)
+        yvalstep = (yvalmax - yvalmin) / (nticks )
         ranges.append( ( (xvalmin, xvalmax, xvalstep),
                          (yvalmin, yvalmax, yvalstep) )  )
         meshrow = []
@@ -85,8 +85,8 @@ def controlmaps(fig, algos, problems, paramsdir, **kwargs):
 
     best = kwargs.get("best", best)
     worst = kwargs.get("worst", worst)
-    nrows = len(algos)
-    ncols = len(problems)
+    nalgos = len(algos)
+    nprobs = len(problems)
     if not kwargs.get("invert", False):
        cmap = matplotlib.cm.get_cmap("jet_r")
     else:
@@ -94,13 +94,14 @@ def controlmaps(fig, algos, problems, paramsdir, **kwargs):
 
     norm = matplotlib.colors.Normalize(vmax=best, vmin=worst)
 
-    for ii in range(nrows):
-        rangex, rangey = ranges[ii]
-        for jj in range(ncols):
-            ax = fig.add_subplot(nrows, ncols, ncols * ii + jj + 1)
+    for jj in range(nprobs):
+        rangex, rangey = ranges[jj]
+        for ii in range(nalgos):
+            ax = fig.add_subplot(nprobs, nalgos, 
+                                 nalgos * jj + ii + 1)
             ax.contourf(meshes[ii][jj], 100, cmap=cmap, norm=norm)
             tickify(rangex, rangey, ax, nticks)
-            
+            ax.label_outer() 
 
 def get_args():
     parser = argparse.ArgumentParser()
