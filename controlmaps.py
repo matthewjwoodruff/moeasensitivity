@@ -3,47 +3,49 @@ Control maps.
 I want all algorithms together, for each obj_eps
 combinaition.  PopSize on abscissa, NFE on ordinate.
 """
+import os
 import numpy
 import pandas
 import matplotlib
 from matplotlib.backends import backend_svg as svg
 
-def dumbscript():
-    data = pandas.read_table("/gpfs/scratch/mjw5407/task1/stats/initialPopulationSize_maxEvaluations_q10_BorgRecency_27_10_1.0", sep=" ")
-    data["xcells"] = pandas.cut(
-        data["initialPopulationSize"], 
-        bins=numpy.arange(0,1200, 200))
-    data["xlabels"] = data.apply(
-        lambda row: int(row["xcells"][1:-1].split(",")[1]), 
-        axis=1)
-    data["ycells"] = pandas.cut(
-        data["maxEvaluations"], 
-        bins=numpy.arange(0, 1200000, 200000))
-    data["ylabels"] = data.apply(
-        lambda row: int(row["ycells"][1:-1].split(",")[1]),
-        axis=1)
-    mesh = pandas.pivot_table(data, values="Hypervolume",
-                              rows="ylabels",
-                              cols="xlabels")
-    fig = matplotlib.figure.Figure()
-    svg.FigureCanvasSVG(fig)
-    ax = fig.add_subplot(1,1,1)
-    ax.contourf(mesh)
-    ax.set_xticklabels(mesh.columns.values)
-    ax.set_yticklabels(mesh.index.values)
-    return fig
+def controlmaps(fig, algos, problems, **kwargs):
+    stat = kwargs.get("stat", "mean")
+    metric = kwargs.get("metric", "Hypervolume")
+    dirname = kwargs.get("dirname", 
+                         "/gpfs/scratch/mjw5407/task1/stats")
 
-def betterscript(fn):
-    data = pandas.read_table(fn, sep=" ")
-    mesh = pandas.pivot_table(data, values="Hypervolume",
-                              rows="grid_initialPopulationSize",
-                              cols="grid_maxEvaluations"
-                             )
-    fig = matplotlib.figure.Figure()
-    svg.FigureCanvasSVG(fig)
-    ax = fig.add_subplot(1,1,1)
-    ax.contourf(mesh)
-    return fig
+    best = 0.0
+    meshes = []
+    for algo in algos:
+        rows = "maxEvaluations"
+        if "Borg" in algo:
+            cols = "initialPopulationSize"
+        else:
+            cols = "populationSize"
+        meshrow = []
+        meshes.append(meshrow)
+        for problem in problems:
+            fn = os.path.join(dirname, "{0}_{1}_{2}_{3}_{4}".format(
+                              rows, cols, stat, algo, problem))
+            table = pandas.read_table(fn, sep=" ")
+            mesh = pandas.pivot_table(table,
+                                      values = metric,
+                                      rows = "grid_{0}".format(rows),
+                                      cols = "grid_{0}".format(cols))
+            meshrow.append(mesh)
+            best = max(best, table[metric].max())
+
+    nrows = len(algos)
+    ncols = len(problems)
+    jet_r = matplotlib.cm.get_cmap("jet_r")
+    norm = matplotlib.colors.Normalize(vmax=best, vmin=0)
+
+    for ii in range(nrows):
+        for jj in range(ncols):
+            ax = fig.add_subplot(nrows, ncols, ncols * ii + jj + 1)
+            ax.contourf(meshes[ii][jj], 100, cmap=jet_r, norm=norm)
+
 
 def cli():
     fig = dumbscript()
