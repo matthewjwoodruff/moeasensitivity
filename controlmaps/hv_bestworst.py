@@ -1,8 +1,28 @@
 """
+Copyright (C) 2013 Matthew Woodruff
+
+This script is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This script is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this script. If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================
 hvbestworst
 
 Load up all the stats files for problems matching a pattern
-and find the worst and best metric values therein
+and find the worst and best metric values therein.
+
+Can use this with best=, worst= in controlmaps.py to scale
+differently.  Say for example you wanted to scale everything
+by the tenth and ninetieth quantile values.  You could do that.
 """
 import os
 import glob
