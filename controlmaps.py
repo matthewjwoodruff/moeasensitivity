@@ -85,6 +85,7 @@ def controlmaps(fig, algos, problems, paramsdir, **kwargs):
 
     best = kwargs.get("best", best)
     worst = kwargs.get("worst", worst)
+    print worst, best
     nalgos = len(algos)
     nprobs = len(problems)
     if not kwargs.get("invert", False):
