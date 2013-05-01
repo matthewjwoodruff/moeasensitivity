@@ -58,6 +58,32 @@ def tickify(rangex, rangey, ax, nticks=5):
                    for val in 
                    numpy.arange(yvalmin, yvalmax+yvalstep, yvalstep)]
     ax.set_yticklabels(yticklabels)
+
+def colorbar(fig, cmap, worst, best, **kwargs):
+    sm = matplotlib.cm.ScalarMappable(cmap=cmap) 
+    sm.set_array([worst, best])
+    cbar = fig.colorbar(sm)
+    cbax = cbar.ax
+    box = cbax.get_position()
+    box = box.shrunk(0.4,1.0)
+    cbax.set_position(box, which="both")
+    cbax.set_frame_on(True)
+    cbax.set_aspect("auto")
+
+    context_l = kwargs.get("context_l", worst)
+    context_h = kwargs.get("context_h", best)
+    slope = 1.0 / (best - worst)
+    intercept = - worst * slope
+    lo = slope * context_l + intercept
+    hi = slope * context_h + intercept
+    cbax.set_ylim((lo, hi))
+    cbax.set_ybound((lo,hi))
+    cbar.set_ticks([
+        0.001 * numpy.ceil(1000*cbar.vmin),
+        0.001 * numpy.floor(1000*cbar.vmax)])
+
+
+
     
 def controlmaps(fig, algos, problems, paramsdir, **kwargs):
     stat = kwargs.get("stat", "mean")
@@ -126,6 +152,8 @@ def controlmaps(fig, algos, problems, paramsdir, **kwargs):
             ax.set_title(algos[ii])
             ax.label_outer() 
 
+    colorbar(fig, cmap, worst, best, **kwargs)
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("algos", 
@@ -146,6 +174,23 @@ def get_args():
     parser.add_argument("-w", "--worst", type=float,
                         help = "override worst metric value")
     parser.add_argument("-p", "--params-dir", default="./params")
+    parser.add_argument("-l", "--cbar-context-low", type=float,
+                        help="color bar context low limit.  "\
+                             "-b and -w override the actual color "\
+                             "normalization."\
+                             "Color bar "\
+                             "context squishes the color bar to "\
+                             "show where it lies in the context "\
+                             "of other sets of control maps.")
+    parser.add_argument("-h", "--cbar-context-high", type=float,
+                        help="color bar context high limit.  "\
+                             "-b and -w override the actual color "\
+                             "normalization."\
+                             "Color bar "\
+                             "context squishes the color bar to "\
+                             "show where it lies in the context "\
+                             "of other sets of control maps.")
+
     return parser.parse_args()
 
 def cli():
