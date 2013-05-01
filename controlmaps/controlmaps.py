@@ -203,8 +203,8 @@ def cli():
     nproblems = len(problems)
 
     fig = matplotlib.figure.Figure(figsize=(nproblems*2, nalgos*2))
-    fig.subplots_adjust(left=0.07, right=0.95, top=0.97, bottom=0.02, 
-                        wspace = 0.25, hspace=0.25)
+    fig.subplots_adjust(left=0.07, right=0.88, top=0.97, bottom=0.02, 
+                        wspace = 0.03, hspace=0.3)
     agg.FigureCanvasAgg(fig)
     keywords = {}
     keywords["stat"] = args.stat
