@@ -39,7 +39,7 @@ def get_args():
     parser.add_argument("problem",
                         help="Problem on which to do Sobol'"\
                              "analysis.")
-    parser.add_argument("-s", "--stats-directory",
+    parser.add_argument("-d", "--stats-directory",
                         help="directory in which to find "\
                              "statistical summaries by set.",
                         default="/gpfs/scratch/mjw5407/task1/stats/")
@@ -52,9 +52,16 @@ def get_args():
                                 "sobol/temp",
                         help="directory in which to place "\
                              "results.")
+    parser.add_argument("-s", "--statistic",
+                        default = "mean",
+                        help = "which statistic to analyze")
+    parser.add_argument("-m", "--metric",
+                        default = "Hypervolume",
+                        help = "which metric to analyze")
+
     return parser.parse_args()
 
-def commandline(algo, problem, inputfile):
+def commandline(algo, problem, inputfile, column):
     cml = ["java", "-Xmx1g", "-server", "-classpath",
            ":".join(classpath())]
     cml.append(".".join(
@@ -63,7 +70,7 @@ def commandline(algo, problem, inputfile):
     sobol_args = ["--parameterFile",
                   "params/{0}_Params".format(algo),
                   "--input", inputfile,
-                  "--metric", "2"]
+                  "--metric", str(column)]
 
     cml.extend(sobol_args)
 
@@ -78,16 +85,31 @@ def strip(origin, destination):
         child = Popen(["tail", "-n", "+2", origin], stdout = ofp)
         child.wait()
 
+class NoMetricError(Exception): pass
+
+def column_number(column_name, filename):
+    with open(filename, 'r') as fp:
+        header = fp.readline()
+        row = header.strip().split(" ")
+    try:
+        return row.index(column_name)
+    except ValueError:
+        raise NoMetricError("No metric {0} in {1}".format(
+                column_name, filename))
+
 def sobol(algo, problem, stats_directory, output_directory, 
-                                                temp_directory):
-    fn = "Set_mean_{0}_{1}".format( algo, problem)
+                temp_directory, stat, metric):
+    fn = "Set_{2}_{0}_{1}".format( algo, problem, stat)
     origin = os.path.join(stats_directory, fn)
+    column = column_number(metric, origin)
+
     destination = os.path.join(temp_directory, fn)
     strip(origin, destination)
 
-    cml = commandline(algo, problem, destination)
+    cml = commandline(algo, problem, destination, column)
     fn = os.path.join(temp_directory, 
-                      "report_{0}_{1}".format(algo, problem))
+                      "report_{0}_{1}_{2}_{3}".format(
+                            algo, problem, stat, metric))
     with open(fn, 'w') as report:
         child = Popen(cml, stdout = report)
         child.wait()
@@ -95,7 +117,8 @@ def sobol(algo, problem, stats_directory, output_directory,
 def cli():
     args = get_args()
     sobol(args.algo, args.problem, args.stats_directory, 
-                     args.output_directory, args.temp_directory)
+                     args.output_directory, args.temp_directory,
+                     args.statistic, args.metric)
 
 if __name__ == "__main__":
     cli()
