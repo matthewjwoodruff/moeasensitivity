@@ -39,7 +39,7 @@ def get_args():
     parser.add_argument("problem",
                         help="Problem on which to do Sobol'"\
                              "analysis.")
-    parser.add_argument("-s", "--sets-directory",
+    parser.add_argument("-s", "--stats-directory",
                         help="directory in which to find "\
                              "statistical summaries by set.",
                         default="/gpfs/scratch/mjw5407/task1/stats/")
@@ -52,9 +52,9 @@ def get_args():
                                 "sobol/temp",
                         help="directory in which to place "\
                              "results.")
-    return parser.get_args()
+    return parser.parse_args()
 
-def commandline(algo, problem, statsdir):
+def commandline(algo, problem, inputfile):
     cml = ["java", "-Xmx1g", "-server", "-classpath",
            ":".join(classpath())]
     cml.append(".".join(
@@ -62,19 +62,40 @@ def commandline(algo, problem, statsdir):
                "SobolAnalysis"]))
     sobol_args = ["--parameterFile",
                   "params/{0}_Params".format(algo),
-                  "--input",
-                  os.path.join(setsdir, "Set_mean_{0}_{1}".format(
-                    algo, problem)),
+                  "--input", inputfile,
                   "--metric", "2"]
 
     cml.extend(sobol_args)
 
     return cml
 
+def strip(origin, destination):
+    """
+    all we're doing is calling tail -n +2 because 
+    MOEAFramework is header-intolerant
+    """
+    with open(destination, 'w') as ofp:
+        child = Popen(["tail", "-n", "+2", origin], stdout = ofp)
+        child.wait()
 
+def sobol(algo, problem, stats_directory, output_directory, 
+                                                temp_directory):
+    fn = "Set_mean_{0}_{1}".format( algo, problem)
+    origin = os.path.join(stats_directory, fn)
+    destination = os.path.join(temp_directory, fn)
+    strip(origin, destination)
 
+    cml = commandline(algo, problem, destination)
+    fn = os.path.join(temp_directory, 
+                      "report_{0}_{1}".format(algo, problem))
+    with open(fn, 'w') as report:
+        child = Popen(cml, stdout = report)
+        child.wait()
+    
 def cli():
     args = get_args()
+    sobol(args.algo, args.problem, args.stats_directory, 
+                     args.output_directory, args.temp_directory)
 
 if __name__ == "__main__":
     cli()
