@@ -108,27 +108,31 @@ def write_table(table, header, data):
     table.write("\n".join([" ".join(row) for row in data]))
     table.write("\n")
 
-def cli():
-    args = get_args()
-    algos = args.algorithms.split(",")
-    problems = args.problems.split(",")
-    stats = args.stats.split(",")
-    metrics = args.metrics.split(",")
-
+def tabulate(algos, problems, stats, metrics, reports_directory,
+                destination):
     rows = []
     for algo, problem, stat, metric in itertools.product(
             algos, problems, stats, metrics):
         reportname = "report_{0}_{1}_{2}_{3}".format(
                         algo, problem, stat, metric)
-        fn = os.path.join(args.reports_directory, reportname)
+        fn = os.path.join(reports_directory, reportname)
         with open(fn, 'r') as report:
             reportrows = tabulate_report(report)
             identity = [algo, problem, stat, metric]
             rows.extend([identity + row for row in reportrows])
     header = ["algo", "problem", "stat", "metric", "input", 
               "interaction", "order", "sensitivity", "confidence"]
-    write_table(args.output_table, header, rows)
+    write_table(destination, header, rows)
+
+def cli():
+    args = get_args()
+    algos = args.algorithms.split(",")
+    problems = args.problems.split(",")
+    stats = args.stats.split(",")
+    metrics = args.metrics.split(",")
+    tabulate(algos, problems, stats, metrics, 
+                args.reports_directory, args.output_table)
 
 if __name__ == "__main__":
     cli()
-# vim:sw=4:ts=4:expandtab:fdm=indent:colorcolumn=68:ai
+# vim:ts=4:sw=4:expandtab:ai:colorcolumn=68:number:fdm=indent
