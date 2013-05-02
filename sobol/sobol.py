@@ -103,16 +103,18 @@ def sobol(algo, problem, stats_directory, output_directory,
     origin = os.path.join(stats_directory, fn)
     column = column_number(metric, origin)
 
-    destination = os.path.join(temp_directory, fn)
-    strip(origin, destination)
+    tempset = os.path.join(temp_directory, fn)
+    strip(origin, tempset)
 
-    cml = commandline(algo, problem, destination, column)
+    cml = commandline(algo, problem, tempset, column)
     fn = os.path.join(temp_directory, 
                       "report_{0}_{1}_{2}_{3}".format(
                             algo, problem, stat, metric))
     with open(fn, 'w') as report:
         child = Popen(cml, stdout = report)
         child.wait()
+
+    os.unlink(tempset)
     
 def cli():
     args = get_args()
