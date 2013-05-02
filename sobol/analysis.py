@@ -31,11 +31,19 @@ def get_args():
                   "Depends on file naming conventions from "\
                   "stats.py"
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("algorithms")
-    parser.add_argument("problems")
-    parser.add_argument("-s", "--stats", default = "mean",
+    parser.add_argument("algorithms",
+                        help="comma-separated list of MOEAs")
+    parser.add_argument("problems",
+                        help="comma-separated list of problems, "\
+                             "e.g. 27_10_1.0")
+    parser.add_argument("output_file",
+                        type = argparse.FileType("w"),
+                        help="file in which to write "\
+                             "tabulated results")
+    parser.add_argument("-s", "--stats", 
+                        default = "mean,q10,q50,q90",
                         help = "comma-separated list of stats, "\
-                               "default is mean")
+                               "default is mean,q10,q50,q90")
     parser.add_argument("-m", "--metrics", default = "Hypervolume",
                         help = "comma-separated list of metrics, "\
                                "default is Hypervolume")
@@ -49,18 +57,12 @@ def get_args():
                                 "sobol/temp",
                         help="directory in which to place "\
                              "intermediate results.")
-    parser.add_argument("-o", "--output-file",
-                        type = argparse.FileType("w")
-                        default="/gpfs/scratch/mjw5407/task1"\
-                                "sobol/sensitivity"
-                        help="file in which to write "\
-                             "tabulated results")
     return parser.parse_args()
 
-def analysis(algorithms, problems, stats, metrics, statsdir,
+def analysis(algos, problems, stats, metrics, statsdir,
                 tempdir, outfile):
     for algo, problem, stat, metric in itertools.product(
-            algorithms, problems, stats, metrics):
+            algos, problems, stats, metrics):
         sobol(algo, problem, statsdir, tempdir, stat, metric)
 
     tabulate(algos, problems, stats, metrics, tempdir, outfile)
