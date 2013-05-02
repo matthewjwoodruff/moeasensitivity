@@ -44,12 +44,8 @@ def get_args():
                              "statistical summaries by set.",
                         default="/gpfs/scratch/mjw5407/task1/stats/")
     parser.add_argument("-o", "--output-directory",
-                        default="/gpfs/scratch/mjw5407/task1/sobol",
-                        help="directory in which to place "\
-                             "results.")
-    parser.add_argument("-t", "--temp-directory",
-                        default="/gpfs/scratch/mjw5407/task1/"\
-                                "sobol/temp",
+                        default="/gpfs/scratch/mjw5407/task1/sobol"\
+                                "/temp",
                         help="directory in which to place "\
                              "results.")
     parser.add_argument("-s", "--statistic",
@@ -97,7 +93,7 @@ def column_number(column_name, filename):
         raise NoMetricError("No metric {0} in {1}".format(
                 column_name, filename))
 
-def sobol(algo, problem, stats_directory, output_directory, 
+def sobol(algo, problem, stats_directory, 
                 temp_directory, stat, metric):
     fn = "Set_{2}_{0}_{1}".format( algo, problem, stat)
     origin = os.path.join(stats_directory, fn)
@@ -119,7 +115,7 @@ def sobol(algo, problem, stats_directory, output_directory,
 def cli():
     args = get_args()
     sobol(args.algo, args.problem, args.stats_directory, 
-                     args.output_directory, args.temp_directory,
+                     args.output_directory,
                      args.statistic, args.metric)
 
 if __name__ == "__main__":
