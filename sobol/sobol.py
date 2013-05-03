@@ -16,7 +16,7 @@ along with this script. If not, see <http://www.gnu.org/licenses/>.
 
 ===================================================================
 
-submit.py
+sobol.py
 """
 
 from subprocess import Popen, PIPE
