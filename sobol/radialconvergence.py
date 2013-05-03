@@ -20,10 +20,14 @@ radialconvergence.py
 """
 import argparse
 import matplotlib
+import matplotlib.figure as figure
+from  matplotlib.backends.backend_agg import FigureCanvasAgg
+from  matplotlib.backends.backend_svg import FigureCanvasSVG
 import pandas
 import math
 import copy
 import itertools
+import os
 
 def get_args():
     description = "Radial convergence plots for Sobol' global "\
@@ -51,7 +55,7 @@ def get_args():
                         help = "produce an svg instead of a png",
                         action = "store_true")
     parser.add_argument("-d", "--dimensions", nargs = 2,
-                        default = [4.0,4.0], type=float,
+                        default = [18.0,18.0], type=float,
                         help = "width, height of the figure, in "\
                                "centimeters")
     parser.add_argument("-t", "--threshold",
@@ -152,12 +156,13 @@ def text(ax, angle, name, offset):
     return text
 
     
-def spider(algo, problem, stat, metric, table, fig, **kwargs):
+def spider(algo, problem, stat, metric, table, ax, **kwargs):
     scale = kwargs.get("scale", 0.4)
     threshold = kwargs.get("threshold", 0.03)
     data = data_for(table, algo, problem, stat, metric)
-    ax = fig.add_subplot(1,1,1, frameon=False)
     format_axes(ax)
+    ax.set_title("{0} {1} {2} {3}".format(
+                    algo, problem, stat, metric, table))
 
     parameters = parameters_in(data)
     angles = angles_for(parameters)
@@ -196,20 +201,28 @@ def spider(algo, problem, stat, metric, table, fig, **kwargs):
 
 def cli():
     args = get_args()
+
     fig = matplotlib.figure.Figure(figsize = (
             args.dimensions[0]/2.54, args.dimensions[1]/2.54) )
+    ax = fig.add_subplot(1,1,1,frameon=False)
     if args.svg:
-        matplotlib.backends.backend_svg.FigureCanvasSVG(fig)
+        FigureCanvasSVG(fig)
     else:
-        matplotlib.backends.backend_agg.FigureCanvasAgg(fig)
+        FigureCanvasAgg(fig)
 
     table = pandas.read_table(args.table, sep=" ")
     args.table.close()
     spider(args.algorithm, args.problem, args.statistic, 
-           args.metric, table, fig)
+           args.metric, table, ax)
 
     fn = filename(args.algorithm, args.problem, 
                                      args.statistic, args.metric)
+    if args.svg:
+        fn = fn + ".svg"
+    else:
+        fn = fn + ".png"
     fig.savefig(os.path.join(args.output_dir, fn))
 
+if __name__ == "__main__":
+    cli()
 # vim:ts=4:sw=4:expandtab:ai:colorcolumn=68:number:fdm=indent
