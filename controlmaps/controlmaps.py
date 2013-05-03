@@ -144,7 +144,10 @@ def controlmaps(fig, algos, problems, paramsdir, **kwargs):
         for ii in range(nalgos):
             ax = fig.add_subplot(nprobs, nalgos, 
                                  nalgos * jj + ii + 1)
-            ax.contourf(meshes[ii][jj], 100, cmap=cmap, norm=norm)
+            contour = ax.contourf(meshes[ii][jj], 100, 
+                                  cmap=cmap, norm=norm,
+                                  rasterized=True)
+            #contour.set_rasterized(True)
             tickify(rangex, rangey, ax, nticks)
             ax.set_xlabel("population size")
             if ii == 0:
@@ -168,13 +171,13 @@ def get_args():
                         default="/gpfs/scratch/mjw5407/task1/stats",
                         help="directory with statistics files")
     parser.add_argument("-o", "--output-file",
-                        default="./controlmaps.png")
+                        default="./controlmaps")
     parser.add_argument("-b", "--best", type=float,
                         help = "override best metric value")
     parser.add_argument("-w", "--worst", type=float,
                         help = "override worst metric value")
     parser.add_argument("-p", "--params-dir", default="./params")
-    parser.add_argument("-l", "--cbar-context-low", type=float,
+    parser.add_argument("-L", "--cbar-context-low", type=float,
                         help="color bar context low limit.  "\
                              "-b and -w override the actual color "\
                              "normalization."\
@@ -182,7 +185,7 @@ def get_args():
                              "context squishes the color bar to "\
                              "show where it lies in the context "\
                              "of other sets of control maps.")
-    parser.add_argument("-h", "--cbar-context-high", type=float,
+    parser.add_argument("-H", "--cbar-context-high", type=float,
                         help="color bar context high limit.  "\
                              "-b and -w override the actual color "\
                              "normalization."\
@@ -190,6 +193,10 @@ def get_args():
                              "context squishes the color bar to "\
                              "show where it lies in the context "\
                              "of other sets of control maps.")
+
+    parser.add_argument("-S", "--svg", action = "store_true",
+                        help = "produce svg output. "\
+                               "default is png")
 
     return parser.parse_args()
 
@@ -202,8 +209,11 @@ def cli():
     nalgos = len(algos)
     nproblems = len(problems)
 
-    fig = matplotlib.figure.Figure(figsize=(nproblems*2, nalgos*2))
-    agg.FigureCanvasAgg(fig)
+    fig = matplotlib.figure.Figure(figsize=(nalgos*3, nproblems*2.2))
+    if args.svg:
+        svg.FigureCanvasSVG(fig)
+    else:
+        agg.FigureCanvasAgg(fig)
     keywords = {}
     keywords["stat"] = args.stat
     keywords["metric"] = args.metric
@@ -214,8 +224,7 @@ def cli():
         keywords["worst"] = args.worst
 
     controlmaps(fig, algos, problems, args.params_dir, **keywords)
-    fig.subplots_adjust(left=0.07, right=0.88, top=0.97, bottom=0.02, 
-                        wspace = 0.03, hspace=0.3)
+    fig.subplots_adjust(right=0.88, wspace = 0.03, hspace=0.3)
 
     fig.savefig(args.output_file)
     
