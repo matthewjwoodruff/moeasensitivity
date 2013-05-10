@@ -218,6 +218,10 @@ def cli():
     keywords["stat"] = args.stat
     keywords["metric"] = args.metric
     keywords["dirname"] = args.stats_directory
+    if args.cbar_context_low is not None:
+        keywords["context_l"] = args.cbar_context_low
+    if args.cbar_context_high is not None:
+        keywords["context_h"] = args.cbar_context_high
     if args.best is not None:
         keywords["best"] = args.best
     if args.worst is not None:
