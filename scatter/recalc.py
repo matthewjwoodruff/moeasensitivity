@@ -44,15 +44,23 @@ def dvnames(ndvs):
 
 def objnames(nobj):
     if nobj == 3:
-        return ["F1", "F2", "PFPF"]
+        return ["F1", "F2", "F3"]
     elif nobj == 10:
-        return "NOISE WEMP DOC ROUGH WFUEL PURCH RANGE LDMAX VCMAX PFPF"    
+        return "NOISE WEMP DOC ROUGH WFUEL PURCH RANGE LDMAX VCMAX PFPF".split(" ")
     else:
         raise Exception("Can't handle {0} objectives".format(nobj))
 
+def outputnames():
+    base = objnames(10)[0:9]
+    names = []
+    for seats in ["2", "4", "6"]:
+        names.extend([name + seats for name in base])
+    return names
+
+
 def get_data(ndvs, nobj, eps):
     dirname = "/gpfs/scratch/mjw5407/task1/ref"
-    filename = "m.{0}_{1}_{2}".format(ndvs, nobj, eps)
+    filename = "m.{0}_{1}_{2:.1f}.ref".format(ndvs, nobj, eps)
     names = dvnames(ndvs) + objnames(nobj)
     table = pandas.read_table(os.path.join(dirname, filename),
                               sep = " ", header=None, names=names)
@@ -63,22 +71,63 @@ def reevaluate(ndvs, nobj, eps):
     agg = Aggregates()
     pfpf = PFPF()
     table = get_data(ndvs, nobj, eps)
-    dvnames = dvnames(ndvs)
-    dvs = table[dvnames]
+    names = dvnames(ndvs)
+    dvs = list(table[names].values)
     if ndvs == 18:
         dvs = [aviation.twentyseven_from_eighteen_dvs(row)
                for row in dvs]
 
+    dvs = [list(row) for row in dvs]
     outputs = [model.evaluate_wide(row) for row in dvs]
-    nine = [agg.minmax(row) for row in outputs]
+
+    ten = [list(agg.minmax(row)) for row in outputs]
     tenth = [pfpf.pfpf(row) for row in dvs]
-    ten = [row.append(pfpf) for row, pfpf in zip(nine, tenth)]
+    for row, pfpf in zip(ten, tenth):
+        row.append(pfpf)
     three = [aviation.three_from_ten_objs(row) for row in ten]
 
-    return dvs, ten, three
+    newtable = dvs
+    for row, a, b, c in zip(newtable, outputs, ten, three):
+        row.extend(a)
+        row.extend(b)
+        row.extend(c)
+    names = dvnames(27) + outputnames() + objnames(10) + objnames(3)
+
+    return pandas.DataFrame(data = newtable, columns=names)
     
+def aviz(table):
+    """
+    Put into aerovis format
+    """
+    lines = []
+    lines.append("# Nondominated Solutions: {0}".format(len(table)))
+    lines.append("# <DATA_HEADER> RS, Cum_Gen, {0}".format(
+                    ", ".join(list(table.columns))))
+    lines.append("# <GEN_HEADER> Cum_Gen")
+    lines.append("#")
+    lines.append("1")
+    lines.append("#")
+    for ii in range(len(table)):
+        row = list(table.irow(ii))
+        lines.append("\t".join(["1\t1", "\t".join([str(val) 
+                                                  for val in row])]))
+    return "\n".join(lines)
+
+def reevaluate_all():
+    tables = []
+    for ndvs, nobj, eps in [(27, 10, 1.0), (18, 10, 1.0),
+                            (27, 3, 0.1),  (18,  3, 0.1)]:
+        table = reevaluate(ndvs, nobj, eps)
+        for row in table:
+            row.append("{0}_{1}_{2:.1f}".format(ndvs, nobj, eps))
+        tables.append(table)
+    names.append("problem")
+
+    return pandas.concat(tables, axis=0)
+
+def cli():
+    altogether = reevaluate_all()
     
-   
     
 
 if __name__ == "__main__":
