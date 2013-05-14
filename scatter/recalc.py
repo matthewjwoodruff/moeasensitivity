@@ -66,6 +66,13 @@ def get_data(ndvs, nobj, eps):
                               sep = " ", header=None, names=names)
     return table
 
+def minify(table):
+    table["F2"] = -table["F2"]
+    for suffix in ["", "2", "4", "6"]:
+        table["RANGE"+suffix] = -table["RANGE"+suffix]
+        table["LDMAX"+suffix] = -table["LDMAX"+suffix]
+        table["VCMAX"+suffix] = -table["VCMAX"+suffix]
+
 def reevaluate(ndvs, nobj, eps):
     model = response.Response()
     agg = Aggregates()
@@ -93,7 +100,9 @@ def reevaluate(ndvs, nobj, eps):
         row.extend(c)
     names = dvnames(27) + outputnames() + objnames(10) + objnames(3)
 
-    return pandas.DataFrame(data = newtable, columns=names)
+    df = pandas.DataFrame(data = newtable, columns=names)
+    minify(df)
+    return df
     
 def aviz(table):
     """
@@ -126,9 +135,15 @@ def reevaluate_all():
     return pandas.concat(tables, axis=0)
 
 def cli():
-    altogether = reevaluate_all()
-    
-    
+    # 27 dv contributes all the ref solutions
+    data = reevaluate(27,10,1.0)
+    text = aviz(data)
+    with open("ten.out", 'w') as fp:
+        fp.write(text)
+    data = reevaluate(27,3,0.1)
+    text = aviz(data)
+    with open("three.out", 'w') as fp:
+        fp.write(text)
 
 if __name__ == "__main__":
     cli()
