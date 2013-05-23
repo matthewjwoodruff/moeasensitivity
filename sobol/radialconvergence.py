@@ -29,6 +29,26 @@ import copy
 import itertools
 import os
 
+def displayname(parameter):
+    dictionary = {
+        "de.crossoverRate": "de.rate",
+        "de.stepSize": "de.step",
+        "initialPopulationSize": "pop",
+        "injectionRate": "inj",
+        "maxEvaluations": "NFE",
+        "pcx.offspring": "pcx.noff",
+        "pcx.parents": "pcx.npar",
+        "pm.distributionIndex": "pm.di",
+        "populationSize": "pop",
+        "sbx.distributionIndex": "sbx.di",
+        "spx.epsilon": "spx.eps",
+        "spx.offspring": "spx.noff",
+        "spx.parents": "spx.npar",
+        "undx.offspring": "undx.noff",
+        "undx.parents": "undx.npar"
+    }
+    return dictionary.get(parameter, parameter)
+
 def get_args():
     description = "Radial convergence plots for Sobol' global "\
                   "sensitivity indices, for MOEA parameterization "\
@@ -64,19 +84,38 @@ def get_args():
     parser.add_argument("-S", "--scale",
                         default = 0.4, type=float,
                         help="scaling factor for elements in plot")
+    parser.add_argument("--threshold-column", default = "L",
+                        choices=["L", "E", "H"], 
+                        help="apply threshold to this column. "\
+                             "L = low end of 95% CI, E = expected "\
+                             "value of sensitivity, H = high end "\
+                             "of 95% CI")
+    parser.add_argument("--draw-ci", action="store_true",
+                        help="Draw the lower and upper confidence "\
+                             "intervals around sensitivity indices. "\
+                             "Default is to draw only the expected "\
+                             "value.")
+                            
+
     return parser.parse_args()
 
 def filename(algo, problem, stat, metric):
     return "rcp_{0}_{1}_{2}_{3}".format(algo, problem, stat, metric)
 
 def format_axes(ax):
-    ax.set_xlim(-3, 3)
-    ax.set_ylim(-3, 3)
+    ax.set_xlim(-1.42, 1.42)
+    ax.set_ylim(-1.42, 1.42)
     ax.set_xticks([])
     ax.set_yticks([])
 
-def circle(ax, angle, rr, cc):
-    ax.add_patch(matplotlib.patches.Ellipse(
+def circle(ax, angle, rr, cc, **kwargs):
+    if kwargs.get("hollow", False):
+        ax.add_patch(matplotlib.patches.Ellipse(
+                    (math.cos(angle), math.sin(angle)), 
+                     rr, rr, edgecolor=cc, lw=2,
+                     facecolor=(1,1,1)))
+    else:
+        ax.add_patch(matplotlib.patches.Ellipse(
                     (math.cos(angle), math.sin(angle)), 
                      rr, rr, facecolor=cc, lw=0))
 
@@ -161,22 +200,34 @@ def spider(algo, problem, stat, metric, table, ax, **kwargs):
     threshold = kwargs.get("threshold", 0.03)
     data = data_for(table, algo, problem, stat, metric)
     format_axes(ax)
-    ax.set_title("{0} {1} {2} {3}".format(
-                    algo, problem, stat, metric, table))
-
+    title = kwargs.get("title", None)
+    if title is None:
+        title = "{0} {1} {2} {3}".format(
+                    algo, problem, stat, metric)
+    ax.set_title(title)
     parameters = parameters_in(data)
     angles = angles_for(parameters)
+    threshold_column = {"L": "lo", "E": "sensitivity", 
+                        "H": "hi"}[kwargs.get("threshold_column",
+                                    "L")]
+
+    drawci = kwargs.get("draw_ci", False)
 
     # second order
     columns = ["hi", "sensitivity", "lo"]
     colors = [(0.8, 0.8, 1.0), (0.4, 0.4, 1.0), (0.0, 0.0, 1.0)]
     secondorder = data[data["order"] == "Second"]
     for row in secondorder.iterrows():
-        if row[1]["lo"] > threshold:
+        if row[1][threshold_column] > threshold:
             for column, color in zip(columns, colors):
+                if column != "sensitivity" and not drawci:
+                    continue
+                if not drawci:
+                    color = (0,0,1)
                 p1, p2 = get_endpoints(angles, row)
                 width = scale * row[1][column]
-                stripe(ax, p1, p2, width, color)
+                if width > 0:
+                    stripe(ax, p1, p2, width, color)
 
 
     # total order and text
@@ -185,18 +236,31 @@ def spider(algo, problem, stat, metric, table, ax, **kwargs):
     for row in totalorder.iterrows():
         name = row[1]["input"]
         angle = angles[name]
-        if row[1]["lo"] > threshold:
+        if row[1][threshold_column] > threshold:
             for column, color in zip(columns, colors):
-                circle(ax, angle, scale * row[1][column], color)
-        text(ax, angle, name, row[1]["lo"] * scale)
+                if column != "sensitivity" and not drawci:
+                    continue
+                if row[1][column] > 0:
+                    if not drawci:
+                        color = (1,0,0)
+                        circle(ax, angle, scale * row[1][column], 
+                                                color, hollow=True)
+                    else:
+                        circle(ax, angle, scale * row[1][column], color)
+        text(ax, angle, displayname(name), row[1]["lo"] * scale)
 
     # first order
     firstorder = data[data["order"] == "First"]
     colors = [(0.1,0.1,0.6), (0.6,0.6,0.8), (0.3,0.3,1.0)]
     for row in firstorder.iterrows():
-        if row[1]["lo"] > threshold:
+        if row[1][threshold_column] > threshold:
             for column, color in zip(columns, colors):
-                circle(ax, angles[row[1]["input"]],
+                if column != "sensitivity" and not drawci:
+                    continue
+                if not drawci:
+                    color = (0.3,0.3,1.0)
+                if row[1][column] > 0:
+                    circle(ax, angles[row[1]["input"]],
                             scale * row[1][column], color)
 
 def cli():
@@ -213,7 +277,7 @@ def cli():
     table = pandas.read_table(args.table, sep=" ")
     args.table.close()
     spider(args.algorithm, args.problem, args.statistic, 
-           args.metric, table, ax)
+           args.metric, table, ax, draw_ci=args.draw_ci)
 
     fn = filename(args.algorithm, args.problem, 
                                      args.statistic, args.metric)

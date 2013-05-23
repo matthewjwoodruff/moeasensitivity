@@ -53,6 +53,9 @@ def get_args():
     parser.add_argument("-o", "--output-directory",
                         default="/gpfs/scratch/mjw5407/task1/sobol",
                         help="where to drop the image files")
+    parser.add_argument("-n", "--output-name",
+                        default = "summary.png",
+                        help = "name of the output file")
     parser.add_argument("-V", "--svg", action="store_true",
                         help="use svg format for images (default "\
                              "is png)")
@@ -61,7 +64,7 @@ def get_args():
                         help = "width and height of each plot, in "\
                                "centimeters")
     parser.add_argument("-t", "--threshold",
-                        default = 0.03, type=float,
+                        default = 0.01, type=float,
                         help="smallest sensitivity index to plot")
     parser.add_argument("-S", "--scale",
                         default = 0.4, type=float,
@@ -71,6 +74,13 @@ def get_args():
                         help = "also generate individual figures "\
                                "for each plot.  Always makes one "\
                                "big summary figure by default.")
+    parser.add_argument("--threshold-column", default = "L",
+                        choices=["L", "E", "H"], 
+                        help="apply threshold to this column. "\
+                             "L = low end of 95%% CI, E = expected "\
+                             "value of sensitivity, H = high end "\
+                             "of 95%% CI")
+
 
     return parser.parse_args()
 
@@ -109,10 +119,24 @@ def cli():
                     index = aa + ss * nalgos + pp * nstats * nalgos\
                             + mm * nproblems * nstats * nalgos + 1
                     ax = fig.add_subplot(nrows, ncols, index, frameon=False)
+                    title = []
+                    if nalgos > 1:
+                        title.append(algos[aa])
+                    if nproblems > 1:
+                        dv, obj, eps = problems[pp].split("_")
+                        title.append(dv + " Variables,")
+                        title.append(obj + " Objectives")
+                    if nstats > 1:
+                        title.append(stats[ss])
+                    if nmetrics > 1:
+                        title.append(metrics[mm])
+                    title = " ".join(title)
                     rc.spider(algos[aa], problems[pp], stats[ss], 
                               metrics[mm], table, 
                               ax, threshold = args.threshold,
-                              scale = args.scale)
+                              scale = args.scale, 
+                              threshold_column = args.threshold_column,
+                              title = title)
                     if args.individual:
                         fig2 = figure.Figure( figsize=axdimensions)
                         ax = fig2.add_subplot(1,1,1,frameon=False)
@@ -130,8 +154,10 @@ def cli():
                         fig2.savefig(fn)
                         
 
-
-    fig.savefig(os.path.join(args.output_directory, "summary"))
+    fig.subplots_adjust(hspace=0.1,wspace=0, top=0.98, bottom=0.05,
+                        left=0.00, right=1.00)
+    fig.savefig(os.path.join(args.output_directory, 
+                             args.output_name))
 
 if __name__ == "__main__":
     cli()

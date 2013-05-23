@@ -51,7 +51,9 @@ def get_args():
                         default="/gpfs/scratch/mjw5407/task1/stats",
                         help="directory where statistics files "\
                              "are found")
-
+    parser.add_argument("-r", "--resamples",
+                        type = int, default=1000,
+                        help="number of bootstrap resamples")
     parser.add_argument("-t", "--temp-directory", 
                         default="/gpfs/scratch/mjw5407/task1/"\
                                 "sobol/temp",
@@ -60,10 +62,11 @@ def get_args():
     return parser.parse_args()
 
 def analysis(algos, problems, stats, metrics, statsdir,
-                tempdir, outfile):
+                tempdir, outfile, resamples):
     for algo, problem, stat, metric in itertools.product(
             algos, problems, stats, metrics):
-        sobol(algo, problem, statsdir, tempdir, stat, metric)
+        sobol(algo, problem, statsdir, tempdir, stat, metric,
+                    resamples)
 
     tabulate(algos, problems, stats, metrics, tempdir, outfile)
 
@@ -75,7 +78,7 @@ def cli():
     metrics = args.metrics.split(",")
 
     analysis(algos, problems, stats, metrics, args.stats_directory,
-                args.temp_directory, args.output_file)
+                args.temp_directory, args.output_file, args.resamples)
 
 if __name__ == "__main__":
     cli()
