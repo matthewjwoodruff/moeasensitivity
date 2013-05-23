@@ -228,7 +228,7 @@ def cli():
         keywords["worst"] = args.worst
 
     controlmaps(fig, algos, problems, args.params_dir, **keywords)
-    fig.subplots_adjust(right=0.88, wspace = 0.03, hspace=0.3)
+    fig.subplots_adjust(right=0.87, wspace = 0.03, hspace=0.3)
 
     fig.savefig(args.output_file)
     
