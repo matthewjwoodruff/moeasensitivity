@@ -54,10 +54,13 @@ def get_args():
     parser.add_argument("-m", "--metric",
                         default = "Hypervolume",
                         help = "which metric to analyze")
+    parser.add_argument("-r", "--resamples", type=int,
+                        help = "number of bootstrap resamples",
+                        default = 1000)
 
     return parser.parse_args()
 
-def commandline(algo, problem, inputfile, column):
+def commandline(algo, problem, inputfile, column, resamples):
     cml = ["java", "-Xmx1g", "-server", "-classpath",
            ":".join(classpath())]
     cml.append(".".join(
@@ -66,7 +69,8 @@ def commandline(algo, problem, inputfile, column):
     sobol_args = ["--parameterFile",
                   "params/{0}_Params".format(algo),
                   "--input", inputfile,
-                  "--metric", str(column)]
+                  "--metric", str(column),
+                  "--resamples", str(resamples)]
 
     cml.extend(sobol_args)
 
@@ -94,7 +98,7 @@ def column_number(column_name, filename):
                 column_name, filename))
 
 def sobol(algo, problem, stats_directory, 
-                temp_directory, stat, metric):
+                temp_directory, stat, metric, resamples):
     fn = "Set_{2}_{0}_{1}".format( algo, problem, stat)
     origin = os.path.join(stats_directory, fn)
     column = column_number(metric, origin)
@@ -102,7 +106,7 @@ def sobol(algo, problem, stats_directory,
     tempset = os.path.join(temp_directory, fn)
     strip(origin, tempset)
 
-    cml = commandline(algo, problem, tempset, column)
+    cml = commandline(algo, problem, tempset, column, resamples)
     fn = os.path.join(temp_directory, 
                       "report_{0}_{1}_{2}_{3}".format(
                             algo, problem, stat, metric))
@@ -116,7 +120,8 @@ def cli():
     args = get_args()
     sobol(args.algo, args.problem, args.stats_directory, 
                      args.output_directory,
-                     args.statistic, args.metric)
+                     args.statistic, args.metric,
+                     args.resamples)
 
 if __name__ == "__main__":
     cli()
