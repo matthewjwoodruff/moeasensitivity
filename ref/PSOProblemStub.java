@@ -1,6 +1,7 @@
 /* Copyright 2009-2012 David Hadka
+ * Copyright 2013 Jon Herman, Matthew Woodruff
  * 
- * This file is part of the MOEA Framework.
+ * This file is derived from part of the MOEA Framework.
  * 
  * The MOEA Framework is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by 

@@ -1,5 +1,23 @@
 """
-TODO: CONTRIBUTION
+Copyright (C) 2013 Matthew Woodruff
+
+This script is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This script is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this script. If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================
+combine_refsets:
+Use MOEAFramework to sort reference sets together.  Optionally,
+determine contributions.
 """
 from subprocess import Popen, PIPE
 import re
@@ -60,6 +78,12 @@ def epsilons(nobj, eps):
 
 
 def commandline(ndv, eps, sets, outputfn):
+    """
+    You may be saying to yourself, "Self, how on earth does this 
+    work?  I'm giving it sets with different numbers of decision
+    variables!"  The answer is that if you say there are none,
+    PSOResultFileReader counts objectives from the end of each row.
+    """
     classpath = ["./lib/{0}".format(fn) for fn in os.listdir("lib") 
                  if re.search("\.jar$", fn) ]
     classpath.append(".")
