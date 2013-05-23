@@ -38,9 +38,13 @@ def get_args():
     parser.add_argument("-o", "--output",
                         help = "name of the output file",
                         default="cdf")
+    parser.add_argument("-a", "--algorithms",
+                        help = "comma separated list of algorithms "\
+                               "to plot", 
+                        default = "Borg,eMOEA,NSGAII,eNSGAII,GDE3")
     return parser.parse_args()
 
-def cdf(fig, objectives):
+def cdf(fig, objectives, algorithms):
     algos = ["Borg", "BorgRecency", "eMOEA", 
              "NSGAII", "eNSGAII", "GDE3"]
     dvs = ["27", "18"]
@@ -231,11 +235,10 @@ def cli():
     args = get_args()
     fig = matplotlib.figure.Figure()
     agg.FigureCanvasAgg(fig)
-    algos = ["Borg", "BorgRecency", "eMOEA", 
-             "NSGAII", "eNSGAII", "GDE3"]
+    algos = args.algorithms.split(",")
     dvs = ["27", "18"]
     if args.format == "cdf":
-        cdf(fig, args.objectives)
+        cdf(fig, args.objectives, algos)
         fig.set_figwidth(8)
         fig.set_figheight(12)
         fig.savefig(args.output)

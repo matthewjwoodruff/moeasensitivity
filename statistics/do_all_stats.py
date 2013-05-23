@@ -23,17 +23,20 @@ with all of the statistics.
 """
 from statistics import analyze, write_result
 import os
+import glob
 import re
 import pandas
 
 metricsdir = "/gpfs/scratch/mjw5407/task1/hv"
-paramsdir = "/gpfs/work/mjw5407/task1/statistics/params"
+paramsdir = "./params"
 outputdir = "/gpfs/scratch/mjw5407/task1/stats"
 
-datafiles = [os.path.join(metricsdir, fn) 
-             for fn in os.listdir(metricsdir)
-             if re.search("\.hv$", fn) and not
-                re.search("^m\.", fn)]
+#datafiles = [os.path.join(metricsdir, fn) 
+#             for fn in os.listdir(metricsdir)
+#             if re.search("\.hv$", fn) and not
+#                re.search("^m\.", fn)]
+
+datafiles = glob.glob(os.path.join(metricsdir, "*0.1.hv"))
 
 for fn in datafiles:
     print "processing {0}".format(fn)
