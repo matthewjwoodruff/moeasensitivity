@@ -10,3 +10,5 @@ Plot a joint PDF of hypervolume attainment.
 
 The idea for this plot is that it would show how likely it is for an MOEA to perform
     consistently across parameterizations, to give the user some idea of reliability.
+    However, it is confusing to explain and difficult to interpret, so it has been
+    dropped from the paper.
