@@ -1,0 +1,3 @@
+ CLASSPATH=`find lib -name *jar | xargs echo | sed -e "s/ /:/g"`
+ CLASSPATH=$CLASSPATH:.
+javac -cp $CLASSPATH *java
