@@ -14,6 +14,8 @@ Analysis procedes in this order:
     sensitivity indices for variance in MOEA performance across the parameter space.
     Also make first/total order bar charts.
 - `cdf` does shaded bar / dot plots based on the hypervolume data
+- `parallel` does parallel coordinate plots and makes input data files for
+    AeroVis scatter plotting
 
 Bonus:
 - `contour` shows joint probability density functions for MOEA performance, but it 
