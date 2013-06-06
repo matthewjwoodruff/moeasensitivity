@@ -4,7 +4,7 @@ moeasensitivity
 Sensitivty analysis on MOEA parameters using MOEAFramework and Python.  
 
 Analysis procedes in this order:
-- Do a massive number of optimization runs. 
+- `submit` does a massive number of optimization runs
 - `ref` is for reference set computation
 - `hv` is for hypervolume calculation
 - `statistics` is for statistical summaries of the hypervolume data
