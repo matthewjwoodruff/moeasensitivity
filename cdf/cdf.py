@@ -206,7 +206,7 @@ def shaded(fig, objectives, algos, dvs, sidebyside):
 
         ax.set_xlim(0, len(algos))
         ax.set_xticks([tt + 0.5 for tt in range(len(algos))])
-        ax.set_xticklabels(algos, rotation=45, ha='right')
+        ax.set_xticklabels(algos, rotation=90, ha='center')
         if counter < nrows and not sidebyside :
             ax.set_xticks([])
             ax.set_xticklabels([])
@@ -215,7 +215,7 @@ def shaded(fig, objectives, algos, dvs, sidebyside):
         ax.set_yticks(tix)
         ax.hlines(tix, 0, len(algos), color=(0.5,0.5,0.5))
         if sidebyside:
-            ax.set_title("{0} Decision Variables".format(dv))
+            ax.set_title("{0} DV".format(dv))
         else:
             ax.set_ylabel("Percent of Best Hypervolume")
             ax.text(1.02*len(algos), 0.5, 
@@ -229,7 +229,9 @@ def shaded(fig, objectives, algos, dvs, sidebyside):
         elif counter > 1 and sidebyside:
             ax.set_yticks([])
             ax.set_yticklabels([])
-    fig.subplots_adjust(hspace=0.05, wspace=0.05)
+    fig.subplots_adjust(left=0.22, bottom=0.13,
+                        hspace=0.05, wspace=0.05) 
+    fig.axes[0].set_ylabel("Percent of Best Hypervolume Attainment")
 
 def cli():
     args = get_args()
@@ -243,13 +245,13 @@ def cli():
         fig.set_figheight(12)
         fig.savefig(args.output)
     elif args.format == "shaded":
-        fig.set_figwidth(6)
-        fig.set_figheight(12)
+        fig.set_figwidth(3)
+        fig.set_figheight(6)
         shaded(fig, args.objectives, algos, dvs, True)
         fig.savefig(args.output)
     elif args.format == "both":
         print "both not implemented yet, falling back to shaded"
-        shady(fig, args.objectives)
+        shaded(fig, args.objectives)
         fig.savefig(args.output)
         
 if __name__ == "__main__":
