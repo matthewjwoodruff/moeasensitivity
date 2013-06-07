@@ -21,3 +21,11 @@ Analysis procedes in this order:
 Bonus:
 - `contour` shows joint probability density functions for MOEA performance, but it 
     is less informative than I had hoped.  These plots are not used in the paper.
+
+What you have to do by hand: 
+- Arrange the Pareto approximation sets files into 
+    a sensible folder structure after all of the optimization has been done.  All of the
+    analysis from `ref` on assumes a particular folder structure for the approximation 
+    sets data.
+- Run the analysis scripts in each directory.  I don't have a `makefile` that lets you
+    do `make researchpaper`.  Maybe for my next study!
