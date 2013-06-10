@@ -13,8 +13,10 @@ What I used for running this study:
 - Four months or so of computer time.
 
 How:
+~~~~
     sh generatesampling.sh
     python submit.py -a Borg,eMOEA,NSGAII,eNSGAII,GDE3 -p 27_10,18_10,27_3_0.1,18_3_0.1 -s 1,50
+~~~~
 
 Note that you'll have to run `submit.py` *again and again* to get all 10,000 parameterizations to complete for each MOEA, unless your job scheduler lets you submit jobs that run for weeks.  Or perhaps you're living in a golden future when this kind of study can be done in the time it takes to drink your morning coffee.  Running `submit.py` repeatedly works because MOEAframework can tell how many parameterizations have already been run, and it picks up where it left off.
 
