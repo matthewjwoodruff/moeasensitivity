@@ -59,7 +59,16 @@ def tickify(rangex, rangey, ax, nticks=5):
                    numpy.arange(yvalmin, yvalmax+yvalstep, yvalstep)]
     ax.set_yticklabels(yticklabels)
 
-def colorbar(fig, cmap, worst, best, **kwargs):
+def colorbar(fig, cmap, sausage, beast, **kwargs):
+    """
+    sausage: worst
+    beast: best
+    Because you can't have positional arguments with the same
+    name as keyword args.  Not sure why, but it was causing 
+    weird problems.
+    """
+    worst = kwargs.get("worst", sausage)
+    best = kwargs.get("best", beast)
     sm = matplotlib.cm.ScalarMappable(cmap=cmap) 
     sm.set_array([worst, best])
     cbar = fig.colorbar(sm)
