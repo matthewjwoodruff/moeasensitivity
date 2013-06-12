@@ -81,17 +81,17 @@ def draw_key(ax):
     line = matplotlib.lines.Line2D([x1,x2], [1.5,1.5], color='k')
     #ax.add_line(line)
     ax.set_frame_on(False)
-    ax.annotate("Total\nOrder", (0.8, 2.3), xytext=(1.1, 2.45),
+    ax.annotate("Total\nOrder", (0.8, 2.3), xytext=(1.1, 2.65),
                 horizontalalignment="baseline",
                 arrowprops={"width":0.3, "shrink":0.05,
                             "frac": 0.1, "headwidth":4})
-    ax.annotate("First\nOrder", (0.8, 1.6), xytext=(1.1, 1.2),
+    ax.annotate("First\nOrder", (0.8, 1.6), xytext=(1.1, 1.0),
                 horizontalalignment="baseline",
                 arrowprops={"width":0.3, "shrink":0.05,
                             "frac": 0.1, "headwidth":4})
-    ax.text(1.3, 2.8, "Key", horizontalalignment="center",
+    ax.text(1.3, 3.15, "Key", horizontalalignment="center",
             weight="bold")
-    rect = matplotlib.patches.Rectangle((0.25, 1.1), 2.3, 1.85,
+    rect = matplotlib.patches.Rectangle((0.25, 0.8), 2.3, 2.6,
                 facecolor='w', edgecolor='k', zorder=-1)
     ax.add_patch(rect)
         
