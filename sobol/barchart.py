@@ -113,8 +113,8 @@ def barchart_figure(fig, table, algos, key=False, **kwargs):
     nbars = dict(zip(algos, nbars))
 
     wbar = 1.0 / total_nbars
-    left = 0.01
-    right = 0.99
+    left = 0.1 * wbar
+    right = 1 - left
 
     # add objective and decision variable lables
     objlabels = fig.add_axes((
