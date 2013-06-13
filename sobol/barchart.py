@@ -60,23 +60,20 @@ def draw_key(ax):
     ax.set_xticks([])
     ax.set_yticks([])
 
-    colors = {"Total": (0.2,0.2,0.2), "First": (0.9,0.9,0.9)}
-    widths = {"Total": 0.8, "First": 0.6}
+    colors = {"Total": (0.2,0.2,0.2), "First": (0.8,0.8,0.8)}
+    widths = {"Total": 0.75, "First": 0.8}
     zorders = {"Total": 0, "First": 1}
 
     x1 = 2
     x2 = 0
     for order, val in [("First", 0.6), ("Total", 0.8)]:
         rect = matplotlib.patches.Rectangle(
-            (0.6, 1.5),
-            #(1-widths[order]/2, 1.5),
+            (1-widths[order]/2, 1.5),
             widths[order], val, facecolor=colors[order], 
             edgecolor=(1,1,1),
             zorder = zorders[order])
         x1 = min(x1, 1-widths[order]/2)
-        x1 = 0.6
-        #x2 = max(x2, 1+widths[order]/2)
-        x2 = max(x2, 0.3+widths[order])
+        x2 = max(x2, 1+widths[order]/2)
         ax.add_patch(rect)
     line = matplotlib.lines.Line2D([x1,x2], [1.5,1.5], color='k')
     #ax.add_line(line)
@@ -116,14 +113,23 @@ def barchart_figure(fig, table, algos, key=False, **kwargs):
     nbars = dict(zip(algos, nbars))
 
     wbar = 1.0 / total_nbars
+    left = 0.01
+    right = 0.99
 
     # add objective and decision variable lables
-    objlabels = fig.add_axes((0, 0.5, 0.5*wbar, 0.4))
+    objlabels = fig.add_axes((
+                              scalebetween(left, right, 0), 
+                              0.5, 
+                              scaleby(left, right, 0.5*wbar), 
+                              0.4))
     make_labels(objlabels, ["10 Objectives", "3 Objectives"])
     objlabels.set_xticks([])
     objlabels.tick_params(axis="x", bottom=False, top=False)
 
-    dvlabels = fig.add_axes((0.5*wbar, 0.5, 0.5*wbar, 0.4))
+    dvlabels = fig.add_axes((scalebetween(left, right, 0.5*wbar), 
+                             0.5, 
+                             scaleby(left, right, 0.5*wbar), 
+                             0.4))
     make_labels(dvlabels, ["18 DV", "27 DV", "18 DV", "27 DV"])
     dvlabels.set_xticks([])
     dvlabels.tick_params(axis="x", bottom=False, top=False)
@@ -134,28 +140,32 @@ def barchart_figure(fig, table, algos, key=False, **kwargs):
 
     for algo in algos:
         width = nbars[algo] * wbar
-        ax = fig.add_axes((xx, 0.5, width, 0.4))
+        ax = fig.add_axes((scalebetween(left, right, xx), 
+                           0.5, 
+                           scaleby(left, right, width), 
+                           0.4))
         ax.set_title(algo, weight="bold")
         barchart_axes(ax, table.ix[algo])
         xx += width
 
     if key:
-        ax = fig.add_axes((xx, 0.5, 3*wbar, 0.4))
+        ax = fig.add_axes((scalebetween(left, right, xx), 
+                           0.5, 
+                           scaleby(left, right, 3*wbar), 0.4))
         draw_key(ax)
 
     # adjust bar width and height
     barwidth = kwargs.get("barwidth", 0.4)
     barheight = kwargs.get("barheight", 1.3)
-    fig.set_figwidth(total_nbars * barwidth)
+    fig.set_figwidth((total_nbars * barwidth) / (right - left))
     fig.set_figheight(10*barheight)
 
 def bar(ax, xx, yy, order, val):
-    color = {"Total": (0.2,0.2,0.2), "First": (0.9,0.9,0.9)}[order]
-    width = {"Total": 0.8, "First": 0.6}[order]
+    color = {"Total": (0.2,0.2,0.2), "First": (0.8,0.8,0.8)}[order]
+    width = {"Total": 0.75, "First": 0.8}[order]
     zorder = {"Total": 0, "First": 1}[order]
     rect = matplotlib.patches.Rectangle(
-        #(xx + 0.5*(1.0-width), yy),
-        (xx + 0.1, yy),
+        (xx + 0.5*(1.0-width), yy),
         width, val, facecolor = color, edgecolor = (0,0,0,0),
         zorder = zorder)
     ax.add_patch(rect)
@@ -165,7 +175,7 @@ def barchart_axes(ax, table):
     expect that table is for a single MOEA, indexed by 
     problem, input, and order
     """
-    problems = ["27_3_0.1", "18_3_0.1", "27_10_1.0", "18_10_1.0"]
+    problems = ["18_10_1.0", "27_10_1.0", "18_3_0.1", "27_3_0.1"]
     inputs = sorted(list(table.index.get_level_values(1).unique()))
     ax.set_xlim((0, len(inputs)))
     ax.set_ylim((0, len(problems)))
