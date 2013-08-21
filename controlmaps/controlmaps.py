@@ -26,6 +26,7 @@ import argparse
 import numpy
 import pandas
 import matplotlib
+import matplotlib.colorbar
 from matplotlib.backends import backend_svg as svg
 from matplotlib.backends import backend_agg as agg
 
@@ -148,23 +149,83 @@ def controlmaps(fig, algos, problems, paramsdir, **kwargs):
 
     norm = matplotlib.colors.Normalize(vmax=best, vmin=worst)
 
+    padleft = 0.15
+    padright = 0.10
+    figwidth = 1.0 - (padleft + padright)
+    axwidth = figwidth / nprobs
+    padtop = 0.05
+    padbottom = 0.08
+    roomforkey = 0.08
+    keyheight = 0.02
+    figheight = 1.0 - (padtop + padbottom + roomforkey)
+    axheight = figheight/nalgos
+
+    print "padleft", padleft
+    print "padright", padright
+    print "figwidth", figwidth
+    print "axwidth", axwidth
+    print "padtop", padtop
+    print "padbottom", padbottom
+    print "roomforkey", roomforkey
+    print "keyheight", keyheight
+    print "figheight", figheight
+    print "axheight", axheight
+
+    sm = matplotlib.cm.ScalarMappable(cmap=cmap) 
+    sm.set_array([worst, best])
+    cbarposition = [padleft,0,1.0-(padleft+padright),roomforkey]
+    ax = fig.add_axes([0, 0, figwidth, keyheight])
+    cbax, kw = matplotlib.colorbar.make_axes(ax, orientation="horizontal")
+    ax.set_position([padleft, padbottom, figwidth, keyheight])
+    ax.text(0.5, -1.7, "hypervolume attainment", ha="center", 
+            transform=ax.transAxes)
+    cbar = matplotlib.colorbar.Colorbar(ax, sm, **kw)
+    fig.delaxes(cbax)
+
+    problemnames = {
+        "27_10_1.0": "27 DV",
+        "18_10_1.0": "18 DV",
+        "27_3_0.1": "27 DV",
+        "18_3_0.1": "18 DV"
+        }
+
     for jj in range(nprobs):
         rangex, rangey = ranges[jj]
         for ii in range(nalgos):
-            ax = fig.add_subplot(nprobs, nalgos, 
-                                 nalgos * jj + ii + 1)
+            bottom = 1.0-padtop-(ii+1)*axheight
+            ax = fig.add_axes([padleft + jj*axwidth, 
+                               bottom,
+                               axwidth, axheight])
             contour = ax.contourf(meshes[ii][jj], 100, 
                                   cmap=cmap, norm=norm,
                                   rasterized=True)
             #contour.set_rasterized(True)
             tickify(rangex, rangey, ax, nticks)
-            ax.set_xlabel("population size")
             if ii == 0:
-                ax.set_ylabel("maximum evaluations")
-            ax.set_title(algos[ii])
-            ax.label_outer() 
+                ax.set_title(problemnames[problems[jj]])
+            else:
+                ytl = [tl.get_text() for tl in ax.get_yticklabels()]
+                ytl[-1] = ""
+                ax.set_yticklabels(ytl)
+            if ii == nalgos-1:
+                ax.set_xlabel("population size")
+            else:
+                ax.set_xticklabels([])
+                ytl = [tl.get_text() for tl in ax.get_yticklabels()]
+                ytl[0] = ""
+                ax.set_yticklabels(ytl)
+            if jj == nprobs-1:
+                ax.text(1.05,0.5,algos[ii],transform=ax.transAxes)
+            if jj > 0:
+                ax.set_yticklabels([])
+    fig.text(0.2*padleft, padbottom + 0.6*figheight, 
+             "maximum function evaluations", rotation="vertical",
+             ha="center", va="center")
 
-    colorbar(fig, cmap, worst, best, **kwargs)
+    print "cbarposition", cbarposition
+    for ax in fig.axes:
+        print ax.get_position()
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -218,7 +279,7 @@ def cli():
     nalgos = len(algos)
     nproblems = len(problems)
 
-    fig = matplotlib.figure.Figure(figsize=(nalgos*3, nproblems*2.2))
+    fig = matplotlib.figure.Figure(figsize=(nproblems*4, nalgos*2.2))
     if args.svg:
         svg.FigureCanvasSVG(fig)
     else:
