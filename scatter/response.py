@@ -37,16 +37,13 @@ class Response(object):
         vector from the DVs in a consistent way:
         constant, linear terms, interactions, squares
         """
-        with open(filename, 'rb') as fp:
-            matrix_text = fp.read()
-        lines = matrix_text.split("\n")
-        lines.pop(0) # header
-
         matrix = []
-        for line in lines:
-            row = line.strip().split("\t")
-            row.pop(0) # response name
-            matrix.append([float(xx) for xx in row])
+        with open(filename, 'rb') as fp:
+            next(fp) #header
+            for line in fp:
+                row = line.decode().strip().split("\t")
+                row.pop(0) # response name
+                matrix.append([float(xx) for xx in row])
 
         two = ndarray(matrix[0:9])
         four = ndarray(matrix[9:18])
@@ -65,8 +62,8 @@ class Response(object):
         return [dvs[0]*dv for dv in dvs[1:]] + interactions
 
     def design_vector(self, dvs):
-        return concatenate([[1], dvs, self.get_interactions(dvs), 
-            dvs ** 2], None)
+        desvec = [[1], dvs, self.get_interactions(dvs), dvs ** 2]
+        return concatenate(desvec)
 
     def evaluate(self, dvs, pax):
         dvs = ndarray(dvs)
@@ -82,8 +79,7 @@ class Response(object):
         six = self.design_vector(dvs[2])
         return concatenate([self.matrix[0].dot(two),
                             self.matrix[1].dot(four),
-                            self.matrix[2].dot(six)],
-                           None)
+                            self.matrix[2].dot(six)])
                
 
 def run_response():
@@ -97,7 +93,7 @@ def run_response():
         message += "\n  examples:"
         message += "\n  python response.py 6"
         message += "\n  python response.py 2 4 6"
-        print message
+        print(message)
         exit(1)
 
     driver = Response()
@@ -115,13 +111,13 @@ def run_response():
                            re.split("[ ,\t]", line.strip())]
             
             if(totalndvs != len(variables)):
-                print "Defective inputs!  Got {}, expected {}.".format(
-                  len(variables), totalndvs)
+                print("Defective inputs!  Got {}, expected {}.".format(
+                  len(variables), totalndvs))
                 exit(1)
             outputs = driver.evaluate_wide(variables)
 
             # write response to stdout
-            print "\t".join([unicode(xx) for xx in outputs])
+            print("\t".join([unicode(xx) for xx in outputs]))
 
             # get next line
             line = sys.stdin.readline()
@@ -136,8 +132,8 @@ def run_response():
                            re.split("[ ,\t]", line.strip())]
             
             if(totalndvs != len(variables)):
-                print "Defective inputs!  Got {}, expected {}.".format(
-                  len(variables), totalndvs)
+                print("Defective inputs!  Got {}, expected {}.".format(
+                  len(variables), totalndvs))
                 exit(1)
 
             outputs = []
@@ -149,7 +145,7 @@ def run_response():
                 outputs += driver.evaluate(dvs, seat)
 
             # write response to stdout
-            print "\t".join([unicode(xx) for xx in outputs])
+            print("\t".join([unicode(xx) for xx in outputs]))
 
             # get next line
             line = sys.stdin.readline()

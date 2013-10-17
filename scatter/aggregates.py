@@ -83,7 +83,7 @@ def run_aggregation():
         # compute aggregate performance objective "zed"
         zed = agg.goal_attainment(row)
         outputline = [unicode(xx) for xx in minmaxobjs] + [unicode(zed), unicode(cv)]
-        print " ".join(outputline)
+        print( " ".join(outputline))
 
         line = sys.stdin.readline()
 

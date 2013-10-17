@@ -58,10 +58,10 @@ def outputnames():
     return names
 
 
-def get_data(ndvs, nobj, eps):
-    dirname = "/gpfs/scratch/mjw5407/task1/ref"
-    filename = "m.{0}_{1}_{2:.1f}.ref".format(ndvs, nobj, eps)
-    names = dvnames(ndvs) + objnames(nobj)
+def get_data(ndvs, nobj, eps, **kwargs):
+    dirname = kwargs.get("dirname", ".")
+    filename = "{0}_{1}_{2:.1f}.ref".format(ndvs, nobj, eps)
+    names = dvnames(ndvs) + objnames(nobj) + ["file", "line"]
     table = pandas.read_table(os.path.join(dirname, filename),
                               sep = " ", header=None, names=names)
     return table
@@ -123,27 +123,25 @@ def aviz(table):
     return "\n".join(lines)
 
 def reevaluate_all():
-    tables = []
-    for ndvs, nobj, eps in [(27, 10, 1.0), (18, 10, 1.0),
-                            (27, 3, 0.1),  (18,  3, 0.1)]:
-        table = reevaluate(ndvs, nobj, eps)
-        for row in table:
-            row.append("{0}_{1}_{2:.1f}".format(ndvs, nobj, eps))
-        tables.append(table)
-    names.append("problem")
-
-    return pandas.concat(tables, axis=0)
+    problems = [(27, 10, 1.0), (27, 3, 0.1), 
+                (18, 10, 1.0), (18, 3, 0.1)]
+    tables = [reevaluate(d, o, e) 
+              for d, o, e 
+              in problems]
+    for table, problem in zip(tables, problems):
+        table.problem = problem
+    return tables
 
 def cli():
     # 27 dv contributes all the ref solutions
-    data = reevaluate(27,10,1.0)
-    text = aviz(data)
-    with open("ten.out", 'w') as fp:
-        fp.write(text)
-    data = reevaluate(27,3,0.1)
-    text = aviz(data)
-    with open("three.out", 'w') as fp:
-        fp.write(text)
+    data = reevaluate_all()
+
+    for table in data:
+        with open("{0}_{1}_{2}.out".format(*table.problem), 'w') as fp:
+            fp.write(aviz(table))
+        table.to_csv(
+            "{0}_{1}_{2}.recalc".format(*table.problem), sep=" ",
+            header=False, index=False)
 
 if __name__ == "__main__":
     cli()

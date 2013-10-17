@@ -43,7 +43,7 @@ def run_aggregation():
     while line:
         # convert line to row
         row = [float(xx) for xx in re.split("[\t ,]", line.strip())]
-        print pfpf.pfpf(row)
+        print(pfpf.pfpf(row))
         line = sys.stdin.readline()
 
 if __name__ == '__main__': run_aggregation()
