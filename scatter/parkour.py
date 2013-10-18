@@ -110,8 +110,8 @@ def draw_axes(ax, names, limits):
 
     # label the limits
     for xx in echs:
-        ax.text(xx, -0.15, limits[xx][0])
-        ax.text(xx, 1.1, limits[xx][1])
+        ax.text(xx, -0.15, limits[xx][0], ha="center", va="bottom")
+        ax.text(xx, 1.1, limits[xx][1], ha="center", va="bottom")
  
 def draw_lines(ax, table, limits, color):
     """ 
@@ -170,15 +170,11 @@ def find_limits(tables, precisions, wrap):
             mins[col] = min(table[col].min(), mins[col])
             maxs[col] = max(table[col].max(), maxs[col])
 
-    viewmins = [math.floor(mins[ii] / precisions[ii]) * precisions[ii]
-                for ii in range(len(precisions))]
-    viewmaxs = [math.ceil(maxs[ii] / precisions[ii]) * precisions[ii]
-                for ii in range(len(precisions))]
     wrappedmins = []
     wrappedmaxs = []
     for ii in range(wrap):
-        mm = viewmins[ii]
-        mx = viewmaxs[ii]
+        mm = mins[ii]
+        mx = maxs[ii]
         jj = 0
         while ii + jj*wrap < len(mins):
             index = ii + jj*wrap
@@ -191,11 +187,19 @@ def find_limits(tables, precisions, wrap):
     while len(wrappedmins) < len(mins):
         wrappedmins.extend(wrappedmins)
         wrappedmaxs.extend(wrappedmaxs)
+    while len(precisions) < len(mins):
+        precisions.extend(precisions)
 
     wrappedmins = wrappedmins[:len(mins)]
     wrappedmaxs = wrappedmaxs[:len(mins)]
+    precisions = precisions[:len(mins)]
 
-    return list(zip(wrappedmins, wrappedmaxs))
+    viewmins = [math.floor(wrappedmins[ii] / precisions[ii]) * precisions[ii]
+                for ii in range(len(precisions))]
+    viewmaxs = [math.ceil(wrappedmaxs[ii] / precisions[ii]) * precisions[ii]
+                for ii in range(len(precisions))]
+
+    return list(zip(viewmins, viewmaxs))
 
 def init_figures(issplit, isvector, naxes, nplots):
     """
