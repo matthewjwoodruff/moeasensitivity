@@ -20,6 +20,8 @@ import argparse
 import sys
 import pandas
 import matplotlib
+import random
+import copy
 from matplotlib.backends import backend_agg as agg
 from matplotlib.backends import backend_svg as svg
 
@@ -121,8 +123,9 @@ def draw_lines(ax, table, limits, color):
     """
     xs = range(len(limits))
     for row in table.itertuples(False):
+        zorder = random.random()
         ys = [(x-l)/(h-l) for x, (l, h) in zip(row, limits)]
-        ax.plot(xs, ys, color=color)
+        ax.plot(xs, ys, color=color, zorder=zorder, lw=1.5)
 
 def draw_legend(ax, naxes, names, colors, title):
     """
@@ -157,7 +160,7 @@ def desired_columns(table, columns):
 
     return pandas.DataFrame(data=data)
 
-def find_limits(tables, precisions):
+def find_limits(tables, precisions, wrap):
     """ find lower and upper limits for each column across all tables """
     mins = tables[0].min()
     maxs = tables[0].max()
@@ -167,11 +170,32 @@ def find_limits(tables, precisions):
             mins[col] = min(table[col].min(), mins[col])
             maxs[col] = max(table[col].max(), maxs[col])
 
-#    viewmins = [numpy.floor(mins[ii] / precisions[ii]) * precisions[ii]
-#                for ii in range(naxes)]
-#    viewmaxes = [numpy.ceil(maxes[ii] / precisions[ii]) * precisions[ii]
-#                for ii in range(naxes)]
-    return zip(mins, maxs)
+    viewmins = [math.floor(mins[ii] / precisions[ii]) * precisions[ii]
+                for ii in range(len(precisions))]
+    viewmaxs = [math.ceil(maxs[ii] / precisions[ii]) * precisions[ii]
+                for ii in range(len(precisions))]
+    wrappedmins = []
+    wrappedmaxs = []
+    for ii in range(wrap):
+        mm = viewmins[ii]
+        mx = viewmaxs[ii]
+        jj = 0
+        while ii + jj*wrap < len(mins):
+            index = ii + jj*wrap
+            mm = min(mm, mins[index])
+            mx = max(mx, maxs[index])
+            jj+=1
+        wrappedmins.append(mm)
+        wrappedmaxs.append(mx)
+
+    while len(wrappedmins) < len(mins):
+        wrappedmins.extend(wrappedmins)
+        wrappedmaxs.extend(wrappedmaxs)
+
+    wrappedmins = wrappedmins[:len(mins)]
+    wrappedmaxs = wrappedmaxs[:len(mins)]
+
+    return list(zip(wrappedmins, wrappedmaxs))
 
 def init_figures(issplit, isvector, naxes, nplots):
     """
@@ -244,12 +268,12 @@ def get_args(argv):
                         help="add a color to the color cycle")
     parser.add_argument("-C", "--columns", type=intrange, nargs="+",
                         help="columns containing data to plot")
-    parser.add_argument("-p", "--precision", nargs='+', type=float,
+    parser.add_argument("-p", "--precisions", nargs='+', type=float,
                         help="precision for each column")
     parser.add_argument("-a", "--axis-names", nargs='+', type=str,
                         help="names for the axes")
     parser.add_argument("-n", "--names", nargs='+', type=str,
-                        help="names for the columns")
+                        help="label for the input files")
     parser.add_argument("-H", "--header", type=int, default=0,
                         help="number of header lines in input files")
     parser.add_argument("-S", "--split", action='store_true',
@@ -322,7 +346,7 @@ def cli(argv):
     if args.columns is not None:
         tables = [desired_columns(t, args.columns) for t in tables]
 
-    limits = find_limits(tables, args.precisions)
+    limits = find_limits(tables, args.precisions, args.wrap)
 
     ncolumns = len(tables[0].columns)
 
@@ -353,9 +377,10 @@ def cli(argv):
         vax.set_xlim((0, xmax))
 
         for table, color in zip(tables, args.colors):
-            indices = range(ii*naxes, ii*naxes + naxes)
+            indices = range(ii*naxes, min(ii*naxes + naxes, ncolumns))
             subtable = table.select(lambda cc: cc in indices, axis=1)
             sublimits = [limits[jj] for jj in indices]
+            print("drawing lines on axes {0} with color {1} and limits {2}".format(rax, color, sublimits))
             draw_lines(rax, subtable, sublimits, color=color)
         if ii == nplots // 2:
             draw_legend(vax, naxes, args.names, args.colors, "File")
@@ -364,12 +389,13 @@ def cli(argv):
         for _ in range(len(limits)):
             drawlimits.append(["", ""])
 
+        dlp = zip(drawlimits, limits, args.precisions)
         if ii == 0:
-            for dl, lim in zip(drawlimits, limits):
-                dl[1] = str(lim[1])
+            for dl, lim, prec in dlp:
+                dl[1] = format_of(prec).format(lim[1])
         if ii + 1 == nplots:
-            for dl, lim in zip(drawlimits, limits):
-                dl[0] = str(lim[0])
+            for dl, lim, prec in dlp:
+                dl[0] = format_of(prec).format(lim[0])
             axis_names = args.axis_names[:naxes]
         else:
             axis_names = [""]*naxes
@@ -379,6 +405,22 @@ def cli(argv):
     raster.savefig(args.output)
     if vector != raster:
         vector.savefig(args.output)
+
+def format_of(precision):
+    """
+    return an appropriate format for the precision
+    """
+    if precision <= 0.0:
+        return "{0}"
+    elif precision < 1e-3:
+        return "{0:.2g}"
+    elif precision < 1e-2:
+        return "{0:.3f}"
+    elif precision < 1e-1:
+        return "{0:.2f}"
+    elif precision < 1:
+        return "{0:.1f}"
+    return "{0:.0f}"
 
 if __name__ == "__main__":
     cli(sys.argv)
