@@ -113,19 +113,24 @@ def draw_axes(ax, names, limits):
         ax.text(xx, -0.15, limits[xx][0], ha="center", va="bottom")
         ax.text(xx, 1.1, limits[xx][1], ha="center", va="bottom")
  
-def draw_lines(ax, table, limits, color):
+def draw_lines(ax, table, limits, **kwargs):
     """ 
     draw lines for a data set
     ax: a matplotlib axes object
     table: a pandas data table with the data to plot.  
     limits: lower and upper limits for the data
-    color: the color to use for data from the table
+
+    keyword args:
+    *color* the color to use for data from the table
+    *lw* linewidth
     """
     xs = range(len(limits))
+    color = kwargs.get("color", 'k')
+    lw = kwargs.get("lw", 1)
     for row in table.itertuples(False):
         zorder = random.random()
         ys = [(x-l)/(h-l) for x, (l, h) in zip(row, limits)]
-        ax.plot(xs, ys, color=color, zorder=zorder, lw=1.5)
+        ax.plot(xs, ys, color=color, zorder=zorder, lw=lw)
 
 def draw_legend(ax, naxes, names, colors, title):
     """
@@ -199,7 +204,7 @@ def find_limits(tables, precisions, wrap):
     viewmaxs = [math.ceil(wrappedmaxs[ii] / precisions[ii]) * precisions[ii]
                 for ii in range(len(precisions))]
 
-    return list(zip(viewmins, viewmaxs))
+    return [[mm, mx] for mm, mx in zip(viewmins, viewmaxs)]
 
 def init_figures(issplit, isvector, naxes, nplots):
     """
@@ -293,6 +298,14 @@ def get_args(argv):
     parser.add_argument("-w", "--wrap", type=int,
                         help="number of axes to draw before wrapping")
 
+    parser.add_argument("-m", "--minima", type=float, nargs="+",
+                        help="minimum values for each column")
+    parser.add_argument("-M", "--maxima", type=float, nargs="+",
+                        help="maximum values for each column")
+
+    parser.add_argument("-W", "--linewidth", type=float, nargs="+",
+                        help="linewidths for solution sets")
+
     args = parser.parse_args(argv)
     if args.columns is not None:
         args.columns = rerange(args.columns)
@@ -337,6 +350,11 @@ def get_args(argv):
             args.precisions.extend(args.precisions)
     args.precisions = args.precisions[:len(args.columns)]
 
+    if args.linewidth is None:
+        args.linewidth = [1] * len(args.files)
+    elif len(args.linewidth) < len(args.files):
+        args.linewidth.extend([1] * (len(args.files) - len(args.linewidth)))
+
     return args
 
 def cli(argv):
@@ -350,9 +368,9 @@ def cli(argv):
     if args.columns is not None:
         tables = [desired_columns(t, args.columns) for t in tables]
 
-    limits = find_limits(tables, args.precisions, args.wrap)
-
     ncolumns = len(tables[0].columns)
+
+    limits = find_limits(tables, args.precisions, args.wrap)
 
     if args.wrap is None:
         nplots = 1
@@ -360,6 +378,15 @@ def cli(argv):
     else:
         nplots = int(math.ceil(ncolumns / args.wrap))
         naxes = args.wrap
+
+    if args.minima is not None:
+        for ii in range(nplots):
+            for mm, lim in zip(args.minima, limits[ii*naxes:]):
+                lim[0] = mm
+    if args.maxima is not None:
+        for ii in range(nplots):
+            for mx, lim in zip(args.maxima, limits[ii*naxes:]):
+                lim[1] = mx
 
     raster, vector = init_figures(args.split, args.vector, naxes, nplots)
 
@@ -380,12 +407,12 @@ def cli(argv):
         rax.set_xlim((0, xmax))
         vax.set_xlim((0, xmax))
 
-        for table, color in zip(tables, args.colors):
+        for table, color, lw in zip(tables, args.colors, args.linewidth):
             indices = range(ii*naxes, min(ii*naxes + naxes, ncolumns))
             subtable = table.select(lambda cc: cc in indices, axis=1)
             sublimits = [limits[jj] for jj in indices]
-            print("drawing lines on axes {0} with color {1} and limits {2}".format(rax, color, sublimits))
-            draw_lines(rax, subtable, sublimits, color=color)
+#            print("drawing lines on axes {0} with color {1} and limits {2}".format(rax, color, sublimits))
+            draw_lines(rax, subtable, sublimits, color=color, lw=lw)
         if ii == nplots // 2:
             draw_legend(vax, naxes, args.names, args.colors, "File")
 
