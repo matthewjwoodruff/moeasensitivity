@@ -142,10 +142,30 @@ def controlmaps(fig, algos, problems, paramsdir, **kwargs):
     print worst, best
     nalgos = len(algos)
     nprobs = len(problems)
-    if not kwargs.get("invert", False):
-       cmap = matplotlib.cm.get_cmap("jet_r")
-    else:
-        cmap = matplotlib.cm.get_cmap("jet")
+#    if not kwargs.get("invert", False):
+#       cmap = matplotlib.cm.get_cmap("jet_r")
+#    else:
+#        cmap = matplotlib.cm.get_cmap("jet")
+
+    cdict = {
+        'red':   ((0.0, 1.0, 1.0),
+                  (0.25,1.0, 1.0),
+                  (0.5, 0.1, 0.1),
+                  (0.75,0.0, 0.0),
+                  (1.0, 0.0, 0.0)),
+        'green': ((0.0, 1.00,1.00),
+                  (0.25,0.95,0.95),
+                  (0.5, 0.8, 0.8),
+                  (0.75,0.3, 0.3),
+                  (1.0, 0.0, 0.0)),
+        'blue':  ((0.0, 1.0, 1.0),
+                  (0.25,0.75,0.75),
+                  (0.5, 0.7, 0.7),
+                  (0.75,1.0, 1.0),
+                  (1.0, 0.5, 0.5))
+    }
+    cmap = matplotlib.colors.LinearSegmentedColormap(
+        'YellowGreenBlue', cdict, 256)
 
     norm = matplotlib.colors.Normalize(vmax=best, vmin=worst)
 
